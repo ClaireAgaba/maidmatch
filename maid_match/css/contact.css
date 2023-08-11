@@ -1,0 +1,66 @@
+/* Add your CSS styles here */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: antiquewhite;
+}
+
+header, footer {
+    /* Add header and footer styles */
+}
+
+.main {
+    /* Add main content styles */
+}
+
+.contact-section, .info-section {
+    padding: 20px;
+    margin: 20px;
+    background-color: #f7f7f7;
+    border: 1px solid #ccc;
+}
+
+form {
+    margin-top: 10px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.info-item {
+    margin: 20px 0;
+}
+
+.feedback {
+    /* Add feedback styles */
+}
+
+a {
+    text-decoration: none;
+    color: #4CAF50;
+}
+
+a:hover {
+    text-decoration: underline;
+}
