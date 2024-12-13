@@ -4,13 +4,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PaperProvider } from 'react-native-paper';
 import { theme } from './src/theme';
 import { WelcomeScreen } from './src/screens/WelcomeScreen';
-import { RegisterScreen } from './src/screens/RegisterScreen';
+import { LoginScreen } from './src/screens/LoginScreen';
 import { MaidSignupScreen } from './src/screens/MaidSignupScreen';
 import { HomeOwnerSignupScreen } from './src/screens/HomeOwnerSignupScreen';
 import { MaidDashboardScreen } from './src/screens/MaidDashboardScreen';
 import { HomeOwnerDashboardScreen } from './src/screens/HomeOwnerDashboardScreen';
-import { SettingsScreen } from './src/screens/SettingsScreen';
-import { AccountSettingsScreen } from './src/screens/AccountSettingsScreen';
+import { AdminLoginScreen } from './src/screens/AdminLoginScreen';
+import { AdminDashboardScreen } from './src/screens/AdminDashboardScreen';
 import { RootStackParamList } from './src/navigation/types';
 import { IconButton } from 'react-native-paper';
 
@@ -27,13 +27,6 @@ export default function App() {
               backgroundColor: theme.colors.primary,
             },
             headerTintColor: theme.colors.surface,
-            headerRight: () => (
-              <IconButton
-                icon="cog"
-                iconColor={theme.colors.surface}
-                onPress={() => navigation.navigate('Settings')}
-              />
-            ),
           }}
         >
           <Stack.Screen
@@ -42,9 +35,14 @@ export default function App() {
             options={{ headerShown: false }}
           />
           <Stack.Screen
-            name="Register"
-            component={RegisterScreen}
-            options={{ title: 'Choose Account Type' }}
+            name="Login"
+            component={LoginScreen}
+            options={{ title: 'Login' }}
+          />
+          <Stack.Screen
+            name="AdminLogin"
+            component={AdminLoginScreen}
+            options={{ title: 'Admin Login' }}
           />
           <Stack.Screen
             name="MaidSignup"
@@ -67,14 +65,9 @@ export default function App() {
             options={{ title: 'Home Owner Dashboard' }}
           />
           <Stack.Screen
-            name="Settings"
-            component={SettingsScreen}
-            options={{ title: 'Settings' }}
-          />
-          <Stack.Screen
-            name="AccountSettings"
-            component={AccountSettingsScreen}
-            options={{ title: 'Account Settings' }}
+            name="AdminDashboard"
+            component={AdminDashboardScreen}
+            options={{ title: 'Admin Dashboard' }}
           />
         </Stack.Navigator>
       </NavigationContainer>

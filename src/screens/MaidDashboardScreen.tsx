@@ -38,6 +38,12 @@ export function MaidDashboardScreen({ navigation }: Props) {
                 {isAvailable ? 'You are available for work' : 'You are not available'}
               </Text>
             </View>
+            <IconButton
+              icon="cog"
+              size={24}
+              onPress={() => navigation.navigate('Settings')}
+              style={styles.settingsButton}
+            />
           </View>
         </LinearGradient>
       </Surface>
@@ -191,9 +197,13 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerText: {
     marginLeft: 16,
+  },
+  settingsButton: {
+    marginRight: 16,
   },
   quickStats: {
     flexDirection: 'row',

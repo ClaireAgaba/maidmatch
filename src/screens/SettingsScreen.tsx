@@ -1,13 +1,22 @@
 import React from 'react';
-import { StyleSheet, View, ScrollView, Alert } from 'react-native';
-import { Card, Title, Text, Button, useTheme, List, Avatar, Divider } from 'react-native-paper';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
+import { View, StyleSheet, Alert } from 'react-native';
+import { List, Divider, Text, useTheme, Button } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import { authService } from '../services/authService';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
-
-export function SettingsScreen({ navigation }: Props) {
+export function SettingsScreen() {
   const theme = useTheme();
+  const navigation = useNavigation();
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      // Navigation will be handled automatically by AuthNavigator
+      // when it receives the authStateChanged event
+    } catch (error) {
+      Alert.alert('Error', 'Failed to logout. Please try again.');
+    }
+  };
 
   const handleDeleteAccount = () => {
     Alert.alert(
@@ -22,7 +31,7 @@ export function SettingsScreen({ navigation }: Props) {
           text: 'Delete',
           onPress: () => {
             // TODO: Implement account deletion
-            navigation.navigate('Welcome');
+            Alert.alert('Not Implemented', 'Account deletion is not yet implemented.');
           },
           style: 'destructive',
         },
@@ -30,112 +39,81 @@ export function SettingsScreen({ navigation }: Props) {
     );
   };
 
-  const handleSwitchAccountType = () => {
-    Alert.alert(
-      'Switch Account Type',
-      'Are you sure you want to switch your account type? You will need to complete the registration process again.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Switch',
-          onPress: () => {
-            // TODO: Implement account type switching
-            navigation.navigate('Welcome');
-          },
-        },
-      ],
-    );
-  };
-
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <Avatar.Icon 
-          size={80} 
-          icon="cog" 
-          style={{ backgroundColor: theme.colors.primary }}
+    <View style={styles.container}>
+      <Text variant="headlineMedium" style={styles.title}>Settings</Text>
+      
+      <List.Section>
+        <List.Subheader>Account</List.Subheader>
+        <List.Item
+          title="Profile"
+          left={props => <List.Icon {...props} icon="account" />}
+          onPress={() => {}}
         />
-        <Title style={styles.headerTitle}>Settings</Title>
+        <List.Item
+          title="Change Password"
+          left={props => <List.Icon {...props} icon="lock" />}
+          onPress={() => navigation.navigate('ChangePassword')}
+        />
+      </List.Section>
+
+      <Divider />
+
+      <List.Section>
+        <List.Subheader>Preferences</List.Subheader>
+        <List.Item
+          title="Notifications"
+          left={props => <List.Icon {...props} icon="bell" />}
+          onPress={() => {}}
+        />
+        <List.Item
+          title="Language"
+          left={props => <List.Icon {...props} icon="translate" />}
+          onPress={() => {}}
+        />
+      </List.Section>
+
+      <View style={styles.buttonContainer}>
+        <Button
+          mode="outlined"
+          onPress={handleLogout}
+          style={styles.logoutButton}
+          icon="logout"
+        >
+          Logout
+        </Button>
+
+        <Button
+          mode="outlined"
+          onPress={handleDeleteAccount}
+          style={[styles.deleteButton, { borderColor: theme.colors.error }]}
+          textColor={theme.colors.error}
+          icon="delete"
+        >
+          Delete Account
+        </Button>
       </View>
-
-      <Card style={styles.section}>
-        <Card.Content>
-          <List.Section>
-            <List.Subheader>Account Settings</List.Subheader>
-            <List.Item
-              title="Profile"
-              description="Edit your personal information"
-              left={props => <List.Icon {...props} icon="account" />}
-              onPress={() => navigation.navigate('AccountSettings')}
-            />
-            <Divider />
-            <List.Item
-              title="Notifications"
-              description="Manage your notification preferences"
-              left={props => <List.Icon {...props} icon="bell" />}
-              onPress={() => {/* TODO: Implement */}}
-            />
-            <Divider />
-            <List.Item
-              title="Privacy"
-              description="Control your privacy settings"
-              left={props => <List.Icon {...props} icon="shield" />}
-              onPress={() => {/* TODO: Implement */}}
-            />
-          </List.Section>
-
-          <List.Section>
-            <List.Subheader>Account Type</List.Subheader>
-            <List.Item
-              title="Switch Account Type"
-              description="Change between Maid and Home Owner"
-              left={props => <List.Icon {...props} icon="swap-horizontal" />}
-              onPress={handleSwitchAccountType}
-            />
-          </List.Section>
-
-          <List.Section>
-            <List.Subheader>Danger Zone</List.Subheader>
-            <List.Item
-              title="Delete Account"
-              description="Permanently delete your account"
-              left={props => <List.Icon {...props} icon="delete" color={theme.colors.error} />}
-              onPress={handleDeleteAccount}
-              titleStyle={{ color: theme.colors.error }}
-            />
-          </List.Section>
-        </Card.Content>
-      </Card>
-
-      <View style={styles.footer}>
-        <Text variant="bodySmall" style={{ color: theme.colors.outline }}>
-          App Version 1.0.0
-        </Text>
-      </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
-  header: {
-    alignItems: 'center',
-    padding: 24,
+  title: {
+    padding: 16,
+    fontWeight: 'bold',
   },
-  headerTitle: {
-    marginTop: 16,
+  buttonContainer: {
+    padding: 16,
+    gap: 16,
   },
-  section: {
-    margin: 16,
-    borderRadius: 12,
+  logoutButton: {
+    marginTop: 'auto',
   },
-  footer: {
-    padding: 24,
-    alignItems: 'center',
+  deleteButton: {
+    marginTop: 8,
   },
 });

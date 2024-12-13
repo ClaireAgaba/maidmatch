@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
-import { Button, TextInput, SegmentedButtons, Text, List, Portal, Modal, useTheme } from 'react-native-paper';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
+import React, { useState, useEffect } from 'react';
+import { View, ScrollView, StyleSheet } from 'react-native';
+import { TextInput, Button, Text, HelperText, RadioButton, List, Portal, Dialog } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
+import { useNavigation } from '@react-navigation/native';
+import { authService } from '../services/authService';
+import { referenceDataService } from '../services/referenceDataService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MaidSignup'>;
 
@@ -19,8 +20,9 @@ type FormData = {
   dateOfBirth: Date;
   gender: 'male' | 'female' | 'other';
   nationality: string;
+  district: string;
   tribe: string;
-  languages: Language[];
+  languages: string[];
   
   // Contact Information
   phoneNumber: string;
@@ -32,13 +34,12 @@ type FormData = {
   emergencyContactRelation: string;
   emergencyContactPhone: string;
   
-  // Qualifications
-  educationLevel: string;
-  professionalTraining: string;
-  workExperience: string;
-  
   // Medical History
-  medicalHistory: string;
+  bloodType: string;
+  allergies: string[];
+  chronicConditions: string[];
+  vaccinations: string[];
+  additionalInfo: string;
   
   // Documents
   identificationDoc: string;
@@ -46,16 +47,24 @@ type FormData = {
   policeClearance: string;
   lcLetter: string;
   educationProof: string;
+  referenceLetter: string;
+  workPermit: string;
 };
 
-export function MaidSignupScreen({ navigation }: Props) {
+export function MaidSignupScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [currentStep, setCurrentStep] = useState(1);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [nationalityExpanded, setNationalityExpanded] = useState(false);
+  const [districtExpanded, setDistrictExpanded] = useState(false);
+  const [tribeExpanded, setTribeExpanded] = useState(false);
+  const [languagesExpanded, setLanguagesExpanded] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     dateOfBirth: new Date(),
     gender: 'female',
     nationality: '',
+    district: '',
     tribe: '',
     languages: [],
     phoneNumber: '',
@@ -64,32 +73,75 @@ export function MaidSignupScreen({ navigation }: Props) {
     emergencyContactName: '',
     emergencyContactRelation: '',
     emergencyContactPhone: '',
-    educationLevel: '',
-    professionalTraining: '',
-    workExperience: '',
-    medicalHistory: '',
+    bloodType: '',
+    allergies: [],
+    chronicConditions: [],
+    vaccinations: [],
+    additionalInfo: '',
     identificationDoc: '',
     medicalCertificate: '',
     policeClearance: '',
     lcLetter: '',
     educationProof: '',
+    referenceLetter: '',
+    workPermit: '',
   });
 
-  const [showLanguageModal, setShowLanguageModal] = useState(false);
-  const [newLanguage, setNewLanguage] = useState({ name: '', proficiency: 'Basic' as const });
+  const [referenceData, setReferenceData] = useState({
+    districts: [],
+    tribes: [],
+    languages: [],
+    relationships: []
+  });
 
-  const handleAddLanguage = () => {
-    if (newLanguage.name) {
-      setFormData({
-        ...formData,
-        languages: [...formData.languages, newLanguage],
-      });
-      setNewLanguage({ name: '', proficiency: 'Basic' });
-      setShowLanguageModal(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showMedicalDialog, setShowMedicalDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const nationalities = [
+    { id: 'UG', name: 'Uganda' },
+    { id: 'KE', name: 'Kenya' },
+    { id: 'TZ', name: 'Tanzania' },
+    { id: 'RW', name: 'Rwanda' },
+    { id: 'BI', name: 'Burundi' },
+    { id: 'SS', name: 'South Sudan' },
+  ];
+
+  const validateForm = () => {
+    if (!formData.nationality) {
+      setError('Please select a nationality');
+      return false;
+    }
+    if (!formData.district) {
+      setError('Please select a district');
+      return false;
+    }
+    if (!formData.tribe) {
+      setError('Please select a tribe');
+      return false;
+    }
+    if (formData.languages.length === 0) {
+      setError('Please select at least one language');
+      return false;
+    }
+    return true;
+  };
+
+  useEffect(() => {
+    loadReferenceData();
+  }, []);
+
+  const loadReferenceData = async () => {
+    try {
+      const data = await referenceDataService.getAllReferenceData();
+      setReferenceData(data);
+    } catch (error) {
+      console.error('Error loading reference data:', error);
     }
   };
 
-  const handleDocumentPick = async (docType: keyof Pick<FormData, 'identificationDoc' | 'medicalCertificate' | 'policeClearance' | 'lcLetter' | 'educationProof'>) => {
+  const handleDocumentPick = async (docType: keyof Pick<FormData, 'identificationDoc' | 'medicalCertificate' | 'policeClearance' | 'lcLetter' | 'educationProof' | 'referenceLetter' | 'workPermit'>) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ['image/*', 'application/pdf'],
@@ -107,6 +159,86 @@ export function MaidSignupScreen({ navigation }: Props) {
     }
   };
 
+  const handleSubmit = async () => {
+    try {
+      if (!validateForm()) {
+        return;
+      }
+      setIsSubmitting(true);
+      
+      // Validate mandatory fields
+      const mandatoryFields = [
+        'fullName',
+        'dateOfBirth',
+        'gender',
+        'phoneNumber',
+        'currentAddress',
+        'emergencyContactName',
+        'emergencyContactRelation',
+        'emergencyContactPhone',
+        'bloodType',
+      ];
+
+      const missingFields = mandatoryFields.filter(field => !formData[field as keyof FormData]);
+      
+      if (missingFields.length > 0) {
+        throw new Error(`Please fill in all mandatory fields: ${missingFields.join(', ')}`);
+      }
+
+      // Validate documents
+      const requiredDocs = [
+        'identificationDoc',
+        'medicalCertificate',
+        'policeClearance',
+        'lcLetter',
+        'educationProof',
+        'referenceLetter',
+        'workPermit'
+      ];
+
+      const missingDocs = requiredDocs.filter(doc => !formData[doc as keyof FormData]);
+      
+      if (missingDocs.length > 0) {
+        throw new Error(`Please upload all required documents: ${missingDocs.join(', ')}`);
+      }
+
+      // Create form data for file upload
+      const formDataToSend = new FormData();
+      
+      // Add all text fields
+      Object.keys(formData).forEach(key => {
+        if (typeof formData[key as keyof FormData] === 'string' || formData[key as keyof FormData] instanceof Date) {
+          formDataToSend.append(key, formData[key as keyof FormData].toString());
+        } else if (typeof formData[key as keyof FormData] === 'object') {
+          formDataToSend.append(key, JSON.stringify(formData[key as keyof FormData]));
+        }
+      });
+
+      // Register user
+      await authService.register({
+        ...formData,
+        role: 'maid',
+        verificationStatus: 'pending'
+      });
+
+      // Show success message and navigate to login
+      Alert.alert(
+        'Registration Successful',
+        'Thank you for submitting your application. It has been submitted for verification. You will receive a notification once your account is verified.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.replace('Login')
+          }
+        ]
+      );
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -119,51 +251,141 @@ export function MaidSignupScreen({ navigation }: Props) {
               onChangeText={(text) => setFormData({ ...formData, fullName: text })}
               style={styles.input}
             />
-            <Button onPress={() => setShowDatePicker(true)} mode="outlined" style={styles.input}>
-              {formData.dateOfBirth.toLocaleDateString()}
+            <Button
+              mode="outlined"
+              onPress={() => setShowDatePicker(true)}
+              style={styles.input}
+            >
+              Date of Birth: {formData.dateOfBirth.toLocaleDateString()}
             </Button>
             {showDatePicker && (
               <DateTimePicker
                 value={formData.dateOfBirth}
                 mode="date"
-                onChange={(event, date) => {
+                display="default"
+                onChange={(event, selectedDate) => {
                   setShowDatePicker(false);
-                  if (date) setFormData({ ...formData, dateOfBirth: date });
+                  if (selectedDate) {
+                    setFormData(prev => ({ ...prev, dateOfBirth: selectedDate }));
+                  }
                 }}
               />
             )}
-            <SegmentedButtons
-              value={formData.gender}
+            <Text style={styles.sectionTitle}>Gender *</Text>
+            <RadioButton.Group
               onValueChange={value => setFormData({ ...formData, gender: value as 'male' | 'female' | 'other' })}
-              buttons={[
-                { value: 'male', label: 'Male' },
-                { value: 'female', label: 'Female' },
-                { value: 'other', label: 'Other' },
-              ]}
-              style={styles.input}
-            />
-            <TextInput
-              label="Nationality"
-              value={formData.nationality}
-              onChangeText={(text) => setFormData({ ...formData, nationality: text })}
-              style={styles.input}
-            />
-            <TextInput
-              label="Tribe"
-              value={formData.tribe}
-              onChangeText={(text) => setFormData({ ...formData, tribe: text })}
-              style={styles.input}
-            />
-            <Button onPress={() => setShowLanguageModal(true)} mode="outlined" style={styles.input}>
-              Add Language
-            </Button>
-            {formData.languages.map((lang, index) => (
-              <List.Item
-                key={index}
-                title={lang.name}
-                description={`Proficiency: ${lang.proficiency}`}
-              />
-            ))}
+              value={formData.gender}
+            >
+              <View style={styles.radioGroup}>
+                <RadioButton.Item label="Female" value="female" />
+                <RadioButton.Item label="Male" value="male" />
+                <RadioButton.Item label="Other" value="other" />
+              </View>
+            </RadioButton.Group>
+            <Text style={styles.sectionTitle}>Nationality *</Text>
+            <List.Accordion
+              title={formData.nationality ? nationalities.find(n => n.id === formData.nationality)?.name || 'Select Nationality' : 'Select Nationality'}
+              expanded={nationalityExpanded}
+              onPress={() => setNationalityExpanded(!nationalityExpanded)}
+              style={[styles.dropdown, !formData.nationality && styles.mandatoryField]}
+            >
+              {nationalities.map((nationality) => (
+                <List.Item
+                  key={nationality.id}
+                  title={nationality.name}
+                  onPress={() => {
+                    setFormData(prev => ({ ...prev, nationality: nationality.id }));
+                    setNationalityExpanded(false);
+                  }}
+                  right={props => 
+                    formData.nationality === nationality.id ? (
+                      <List.Icon {...props} icon="check" />
+                    ) : null
+                  }
+                />
+              ))}
+            </List.Accordion>
+            <Text style={styles.sectionTitle}>District *</Text>
+            <List.Accordion
+              title={formData.district ? referenceData.districts.find(d => d._id === formData.district)?.name || 'Select District' : 'Select District'}
+              expanded={districtExpanded}
+              onPress={() => setDistrictExpanded(!districtExpanded)}
+              style={[styles.dropdown, !formData.district && styles.mandatoryField]}
+            >
+              {referenceData.districts
+                .filter(district => district.isActive)
+                .map((district) => (
+                  <List.Item
+                    key={district._id}
+                    title={district.name}
+                    onPress={() => {
+                      setFormData(prev => ({ ...prev, district: district._id }));
+                      setDistrictExpanded(false);
+                    }}
+                    right={props => 
+                      formData.district === district._id ? (
+                        <List.Icon {...props} icon="check" />
+                      ) : null
+                    }
+                  />
+                ))}
+            </List.Accordion>
+            <Text style={styles.sectionTitle}>Tribe *</Text>
+            <List.Accordion
+              title={formData.tribe ? referenceData.tribes.find(t => t._id === formData.tribe)?.name || 'Select Tribe' : 'Select Tribe'}
+              expanded={tribeExpanded}
+              onPress={() => setTribeExpanded(!tribeExpanded)}
+              style={[styles.dropdown, !formData.tribe && styles.mandatoryField]}
+            >
+              {referenceData.tribes
+                .filter(tribe => tribe.isActive)
+                .map((tribe) => (
+                  <List.Item
+                    key={tribe._id}
+                    title={tribe.name}
+                    onPress={() => {
+                      setFormData(prev => ({ ...prev, tribe: tribe._id }));
+                      setTribeExpanded(false);
+                    }}
+                    right={props => 
+                      formData.tribe === tribe._id ? (
+                        <List.Icon {...props} icon="check" />
+                      ) : null
+                    }
+                  />
+                ))}
+            </List.Accordion>
+            <Text style={styles.sectionTitle}>Languages *</Text>
+            <List.Accordion
+              title={formData.languages.length > 0 
+                ? `${formData.languages.length} Language${formData.languages.length > 1 ? 's' : ''} Selected`
+                : 'Select Languages'}
+              expanded={languagesExpanded}
+              onPress={() => setLanguagesExpanded(!languagesExpanded)}
+              style={[styles.dropdown, formData.languages.length === 0 && styles.mandatoryField]}
+            >
+              {referenceData.languages
+                .filter(language => language.isActive)
+                .map((language) => (
+                  <List.Item
+                    key={language._id}
+                    title={language.name}
+                    onPress={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        languages: prev.languages.includes(language._id)
+                          ? prev.languages.filter(id => id !== language._id)
+                          : [...prev.languages, language._id]
+                      }));
+                    }}
+                    right={props => 
+                      formData.languages.includes(language._id) ? (
+                        <List.Icon {...props} icon="check" />
+                      ) : null
+                    }
+                  />
+                ))}
+            </List.Accordion>
           </View>
         );
       case 2:
@@ -189,7 +411,6 @@ export function MaidSignupScreen({ navigation }: Props) {
               value={formData.currentAddress}
               onChangeText={(text) => setFormData({ ...formData, currentAddress: text })}
               multiline
-              numberOfLines={3}
               style={styles.input}
             />
             <Text variant="titleMedium" style={styles.subsectionTitle}>Emergency Contact</Text>
@@ -199,12 +420,17 @@ export function MaidSignupScreen({ navigation }: Props) {
               onChangeText={(text) => setFormData({ ...formData, emergencyContactName: text })}
               style={styles.input}
             />
-            <TextInput
-              label="Relationship"
-              value={formData.emergencyContactRelation}
-              onChangeText={(text) => setFormData({ ...formData, emergencyContactRelation: text })}
-              style={styles.input}
-            />
+            <List.Section>
+              <List.Subheader>Relationship</List.Subheader>
+              {referenceData.relationships.map((relationship: any) => (
+                <List.Item
+                  key={relationship._id}
+                  title={relationship.name}
+                  onPress={() => setFormData({ ...formData, emergencyContactRelation: relationship._id })}
+                  right={() => formData.emergencyContactRelation === relationship._id ? <List.Icon icon="check" /> : null}
+                />
+              ))}
+            </List.Section>
             <TextInput
               label="Emergency Contact Phone"
               value={formData.emergencyContactPhone}
@@ -217,27 +443,41 @@ export function MaidSignupScreen({ navigation }: Props) {
       case 3:
         return (
           <View>
-            <Text variant="titleLarge" style={styles.stepTitle}>Qualifications</Text>
+            <Text variant="titleLarge" style={styles.stepTitle}>Medical History</Text>
+            <Text style={styles.sectionTitle}>Blood Type *</Text>
+            <RadioButton.Group
+              onValueChange={value => setFormData({ ...formData, bloodType: value })}
+              value={formData.bloodType}
+            >
+              <View style={styles.bloodTypeContainer}>
+                {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(type => (
+                  <RadioButton.Item key={type} label={type} value={type} />
+                ))}
+              </View>
+            </RadioButton.Group>
             <TextInput
-              label="Highest Level of Education"
-              value={formData.educationLevel}
-              onChangeText={(text) => setFormData({ ...formData, educationLevel: text })}
+              label="Allergies (comma separated)"
+              value={formData.allergies.join(', ')}
+              onChangeText={(text) => setFormData({ ...formData, allergies: text.split(',').map(t => t.trim()) })}
               style={styles.input}
             />
             <TextInput
-              label="Professional Training"
-              value={formData.professionalTraining}
-              onChangeText={(text) => setFormData({ ...formData, professionalTraining: text })}
-              multiline
-              numberOfLines={3}
+              label="Chronic Conditions (comma separated)"
+              value={formData.chronicConditions.join(', ')}
+              onChangeText={(text) => setFormData({ ...formData, chronicConditions: text.split(',').map(t => t.trim()) })}
               style={styles.input}
             />
             <TextInput
-              label="Work Experience"
-              value={formData.workExperience}
-              onChangeText={(text) => setFormData({ ...formData, workExperience: text })}
+              label="Vaccinations (comma separated)"
+              value={formData.vaccinations.join(', ')}
+              onChangeText={(text) => setFormData({ ...formData, vaccinations: text.split(',').map(t => t.trim()) })}
+              style={styles.input}
+            />
+            <TextInput
+              label="Additional Information"
+              value={formData.additionalInfo}
+              onChangeText={(text) => setFormData({ ...formData, additionalInfo: text })}
               multiline
-              numberOfLines={4}
               style={styles.input}
             />
           </View>
@@ -245,67 +485,150 @@ export function MaidSignupScreen({ navigation }: Props) {
       case 4:
         return (
           <View>
-            <Text variant="titleLarge" style={styles.stepTitle}>Medical History</Text>
-            <TextInput
-              label="Medical History"
-              value={formData.medicalHistory}
-              onChangeText={(text) => setFormData({ ...formData, medicalHistory: text })}
-              multiline
-              numberOfLines={4}
-              style={styles.input}
+            <Text variant="titleLarge" style={styles.stepTitle}>Required Documents</Text>
+            <Text variant="bodyMedium" style={styles.note}>All documents are mandatory</Text>
+            
+            <List.Item
+              title="National ID/Passport"
+              description={formData.identificationDoc ? "Uploaded" : "Required"}
+              right={() => (
+                <Button
+                  mode="contained"
+                  onPress={() => handleDocumentPick('identificationDoc')}
+                >
+                  Upload
+                </Button>
+              )}
+            />
+            
+            <List.Item
+              title="Medical Certificate"
+              description={formData.medicalCertificate ? "Uploaded" : "Required"}
+              right={() => (
+                <Button
+                  mode="contained"
+                  onPress={() => handleDocumentPick('medicalCertificate')}
+                >
+                  Upload
+                </Button>
+              )}
+            />
+            
+            <List.Item
+              title="Police Clearance"
+              description={formData.policeClearance ? "Uploaded" : "Required"}
+              right={() => (
+                <Button
+                  mode="contained"
+                  onPress={() => handleDocumentPick('policeClearance')}
+                >
+                  Upload
+                </Button>
+              )}
+            />
+            
+            <List.Item
+              title="LC Letter"
+              description={formData.lcLetter ? "Uploaded" : "Required"}
+              right={() => (
+                <Button
+                  mode="contained"
+                  onPress={() => handleDocumentPick('lcLetter')}
+                >
+                  Upload
+                </Button>
+              )}
+            />
+            
+            <List.Item
+              title="Education Certificates"
+              description={formData.educationProof ? "Uploaded" : "Required"}
+              right={() => (
+                <Button
+                  mode="contained"
+                  onPress={() => handleDocumentPick('educationProof')}
+                >
+                  Upload
+                </Button>
+              )}
+            />
+            
+            <List.Item
+              title="Reference Letter"
+              description={formData.referenceLetter ? "Uploaded" : "Required"}
+              right={() => (
+                <Button
+                  mode="contained"
+                  onPress={() => handleDocumentPick('referenceLetter')}
+                >
+                  Upload
+                </Button>
+              )}
+            />
+            
+            <List.Item
+              title="Work Permit"
+              description={formData.workPermit ? "Uploaded" : "Required"}
+              right={() => (
+                <Button
+                  mode="contained"
+                  onPress={() => handleDocumentPick('workPermit')}
+                >
+                  Upload
+                </Button>
+              )}
             />
           </View>
         );
       case 5:
         return (
-          <View>
-            <Text variant="titleLarge" style={styles.stepTitle}>Document Attachments</Text>
-            <Button 
-              mode="outlined" 
-              onPress={() => handleDocumentPick('identificationDoc')}
-              style={styles.input}
-            >
-              Upload Identification {formData.identificationDoc ? '✓' : ''}
-            </Button>
-            <Button 
-              mode="outlined" 
-              onPress={() => handleDocumentPick('medicalCertificate')}
-              style={styles.input}
-            >
-              Upload Medical Certificate {formData.medicalCertificate ? '✓' : ''}
-            </Button>
-            <Button 
-              mode="outlined" 
-              onPress={() => handleDocumentPick('policeClearance')}
-              style={styles.input}
-            >
-              Upload Police Clearance {formData.policeClearance ? '✓' : ''}
-            </Button>
-            <Button 
-              mode="outlined" 
-              onPress={() => handleDocumentPick('lcLetter')}
-              style={styles.input}
-            >
-              Upload LC Letter {formData.lcLetter ? '✓' : ''}
-            </Button>
-            <Button 
-              mode="outlined" 
-              onPress={() => handleDocumentPick('educationProof')}
-              style={styles.input}
-            >
-              Upload Education Proof {formData.educationProof ? '✓' : ''}
-            </Button>
-          </View>
+          <ScrollView>
+            <Text variant="titleLarge" style={styles.stepTitle}>Review Your Information</Text>
+            <Text variant="bodyMedium" style={styles.note}>Please review all your information before submission</Text>
+            
+            <List.Section title="Personal Information">
+              <List.Item title="Full Name" description={formData.fullName} />
+              <List.Item title="Date of Birth" description={formData.dateOfBirth.toLocaleDateString()} />
+              <List.Item title="Gender" description={formData.gender} />
+              <List.Item title="Nationality" description={formData.nationality} />
+              <List.Item title="District" description={formData.district} />
+              <List.Item title="Tribe" description={formData.tribe} />
+            </List.Section>
+            
+            <List.Section title="Contact Information">
+              <List.Item title="Phone Number" description={formData.phoneNumber} />
+              <List.Item title="Email" description={formData.email || 'Not provided'} />
+              <List.Item title="Current Address" description={formData.currentAddress} />
+            </List.Section>
+            
+            <List.Section title="Emergency Contact">
+              <List.Item title="Name" description={formData.emergencyContactName} />
+              <List.Item title="Relation" description={formData.emergencyContactRelation} />
+              <List.Item title="Phone" description={formData.emergencyContactPhone} />
+            </List.Section>
+            
+            <List.Section title="Medical Information">
+              <List.Item title="Blood Type" description={formData.bloodType} />
+              <List.Item title="Allergies" description={formData.allergies.join(', ') || 'None'} />
+              <List.Item title="Chronic Conditions" description={formData.chronicConditions.join(', ') || 'None'} />
+              <List.Item title="Vaccinations" description={formData.vaccinations.join(', ') || 'None'} />
+              <List.Item title="Additional Information" description={formData.additionalInfo || 'None'} />
+            </List.Section>
+            
+            <List.Section title="Documents">
+              <List.Item title="National ID/Passport" description={formData.identificationDoc ? 'Uploaded' : 'Missing'} />
+              <List.Item title="Medical Certificate" description={formData.medicalCertificate ? 'Uploaded' : 'Missing'} />
+              <List.Item title="Police Clearance" description={formData.policeClearance ? 'Uploaded' : 'Missing'} />
+              <List.Item title="LC Letter" description={formData.lcLetter ? 'Uploaded' : 'Missing'} />
+              <List.Item title="Education Certificates" description={formData.educationProof ? 'Uploaded' : 'Missing'} />
+              <List.Item title="Reference Letter" description={formData.referenceLetter ? 'Uploaded' : 'Missing'} />
+              <List.Item title="Work Permit" description={formData.workPermit ? 'Uploaded' : 'Missing'} />
+            </List.Section>
+          </ScrollView>
         );
       default:
         return null;
     }
-  };
-
-  const handleSubmit = () => {
-    // TODO: Implement form submission
-    console.log('Form submitted:', formData);
-    navigation.navigate('MaidDashboard');
   };
 
   return (
@@ -346,41 +669,95 @@ export function MaidSignupScreen({ navigation }: Props) {
           <Button
             mode="contained"
             onPress={handleSubmit}
-            style={styles.navigationButton}
+            style={[styles.navigationButton, styles.submitButton]}
+            loading={isSubmitting}
+            disabled={isSubmitting}
           >
-            Submit
+            Submit Application
           </Button>
         )}
       </View>
 
       <Portal>
-        <Modal
-          visible={showLanguageModal}
-          onDismiss={() => setShowLanguageModal(false)}
-          contentContainerStyle={styles.modal}
+        <Dialog
+          visible={showMedicalDialog}
+          onDismiss={() => setShowMedicalDialog(false)}
         >
-          <Text variant="titleMedium" style={styles.modalTitle}>Add Language</Text>
-          <TextInput
-            label="Language Name"
-            value={newLanguage.name}
-            onChangeText={(text) => setNewLanguage({ ...newLanguage, name: text })}
-            style={styles.input}
-          />
-          <SegmentedButtons
-            value={newLanguage.proficiency}
-            onValueChange={value => setNewLanguage({ ...newLanguage, proficiency: value as 'Basic' | 'Intermediate' | 'Fluent' })}
-            buttons={[
-              { value: 'Basic', label: 'Basic' },
-              { value: 'Intermediate', label: 'Intermediate' },
-              { value: 'Fluent', label: 'Fluent' },
-            ]}
-            style={styles.input}
-          />
-          <Button mode="contained" onPress={handleAddLanguage}>
-            Add
-          </Button>
-        </Modal>
+          <Dialog.Title>Medical History</Dialog.Title>
+          <Dialog.Content>
+            <Text style={styles.dialogLabel}>Blood Type *</Text>
+            <RadioButton.Group
+              onValueChange={value => 
+                setFormData(prev => ({
+                  ...prev,
+                  bloodType: value
+                }))
+              }
+              value={formData.bloodType}
+            >
+              <View style={styles.bloodTypeContainer}>
+                {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(type => (
+                  <RadioButton.Item key={type} label={type} value={type} />
+                ))}
+              </View>
+            </RadioButton.Group>
+
+            <TextInput
+              label="Allergies (comma separated)"
+              value={formData.allergies.join(', ')}
+              onChangeText={text => 
+                setFormData(prev => ({
+                  ...prev,
+                  allergies: text.split(',').map(t => t.trim())
+                }))
+              }
+              style={styles.dialogInput}
+            />
+
+            <TextInput
+              label="Chronic Conditions (comma separated)"
+              value={formData.chronicConditions.join(', ')}
+              onChangeText={text => 
+                setFormData(prev => ({
+                  ...prev,
+                  chronicConditions: text.split(',').map(t => t.trim())
+                }))
+              }
+              style={styles.dialogInput}
+            />
+
+            <TextInput
+              label="Vaccinations (comma separated)"
+              value={formData.vaccinations.join(', ')}
+              onChangeText={text => 
+                setFormData(prev => ({
+                  ...prev,
+                  vaccinations: text.split(',').map(t => t.trim())
+                }))
+              }
+              style={styles.dialogInput}
+            />
+
+            <TextInput
+              label="Additional Information"
+              value={formData.additionalInfo}
+              onChangeText={text => 
+                setFormData(prev => ({
+                  ...prev,
+                  additionalInfo: text
+                }))
+              }
+              multiline
+              numberOfLines={3}
+              style={styles.dialogInput}
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowMedicalDialog(false)}>Done</Button>
+          </Dialog.Actions>
+        </Dialog>
       </Portal>
+      {error && <HelperText type="error" visible={!!error}>{error}</HelperText>}
     </ScrollView>
   );
 }
@@ -426,13 +803,50 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 8,
   },
-  modal: {
-    backgroundColor: 'white',
-    padding: 20,
-    margin: 20,
-    borderRadius: 8,
+  submitButton: {
+    marginTop: 24,
+    marginBottom: 32,
+    paddingVertical: 8,
   },
-  modalTitle: {
+  note: {
     marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  radioGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bloodTypeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  dropdown: {
+    backgroundColor: '#f5f5f5',
+    marginBottom: 12,
+    borderRadius: 4,
+  },
+  uploadButton: {
+    marginVertical: 8,
+  },
+  medicalButton: {
+    marginVertical: 16,
+  },
+  dialogLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginVertical: 8,
+  },
+  dialogInput: {
+    marginVertical: 8,
+  },
+  mandatoryField: {
+    borderColor: '#BA1A1A',
+    borderWidth: 1,
   },
 });
