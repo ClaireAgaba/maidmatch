@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Text, Avatar, Badge, ProgressBar, useTheme, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -49,15 +49,39 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     }
   };
 
+  const renderAvatar = () => {
+    if (profilePicture) {
+      // Check if it's a remote URL or local path
+      if (profilePicture.startsWith('http')) {
+        return (
+          <Avatar.Image
+            size={60}
+            source={{ uri: profilePicture }}
+          />
+        );
+      } else {
+        // For local images, we need to use require dynamically
+        return (
+          <Image
+            source={require('../.' + profilePicture)}
+            style={styles.avatar}
+          />
+        );
+      }
+    }
+    return (
+      <Avatar.Text
+        size={60}
+        label={getInitials(fullName)}
+      />
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.topRow}>
         <View style={styles.profileSection}>
-          {profilePicture ? (
-            <Avatar.Image size={50} source={{ uri: profilePicture }} />
-          ) : (
-            <Avatar.Text size={50} label={getInitials(fullName)} />
-          )}
+          {renderAvatar()}
           <View style={styles.nameSection}>
             <Text variant="titleMedium" style={styles.welcomeText}>Welcome back,</Text>
             <Text variant="headlineSmall" style={styles.nameText}>{fullName}</Text>
@@ -168,6 +192,11 @@ const styles = StyleSheet.create({
   earningsAmount: {
     fontWeight: 'bold',
     marginTop: 4,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
 });
 

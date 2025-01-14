@@ -3,7 +3,7 @@ import { HomeownerProfile, MaidRequest, PaymentTransaction, HomeownerNotificatio
 export const mockHomeownerProfile: HomeownerProfile = {
   id: '1',
   fullName: 'Cedric Ahumuza',
-  photoUrl: require('../../assets/maid.jpg'),
+  photoUrl: '/assets/maid.jpg',
   location: {
     city: 'Kampala',
     area: 'Kololo',
@@ -26,7 +26,7 @@ export const mockAvailableMaids: AvailableMaid[] = [
   {
     id: '1',
     fullName: 'Claire Agaba',
-    photoUrl: require('../../assets/wel.jpg'),
+    photoUrl: '/assets/wel.jpg',
     distance: 2.5,
     rating: 4.8,
     totalJobs: 45,
