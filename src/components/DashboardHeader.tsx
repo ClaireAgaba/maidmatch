@@ -2,10 +2,11 @@ import React from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import { Text, Avatar, Badge, ProgressBar, useTheme, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ImageSourcePropType } from 'react-native';
 
 interface DashboardHeaderProps {
   fullName: string;
-  profilePicture?: string;
+  profilePicture?: ImageSourcePropType;
   verificationStatus: 'pending' | 'approved' | 'rejected';
   profileProgress: number;
   notificationCount: number;
@@ -51,23 +52,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   const renderAvatar = () => {
     if (profilePicture) {
-      // Check if it's a remote URL or local path
-      if (profilePicture.startsWith('http')) {
-        return (
-          <Avatar.Image
-            size={60}
-            source={{ uri: profilePicture }}
-          />
-        );
-      } else {
-        // For local images, we need to use require dynamically
-        return (
-          <Image
-            source={require('../.' + profilePicture)}
-            style={styles.avatar}
-          />
-        );
-      }
+      return (
+        <Avatar.Image
+          size={60}
+          source={profilePicture}
+        />
+      );
     }
     return (
       <Avatar.Text

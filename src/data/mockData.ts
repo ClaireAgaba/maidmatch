@@ -3,7 +3,7 @@ import { MaidProfile, Job, Payment, Notification } from '../types/maid';
 export const mockMaidProfile: MaidProfile = {
   id: '1',
   fullName: 'Claire Agaba',
-  photoUrl: '/assets/wel.jpg',
+  photoUrl: require('../../assets/wel.jpg'),
   age: 28,
   location: {
     city: 'Kampala',
