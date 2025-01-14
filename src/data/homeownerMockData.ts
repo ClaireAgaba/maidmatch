@@ -2,7 +2,7 @@ import { HomeownerProfile, MaidRequest, PaymentTransaction, HomeownerNotificatio
 
 export const mockHomeownerProfile: HomeownerProfile = {
   id: '1',
-  fullName: 'John Smith',
+  fullName: 'Cedric Ahumuza',
   photoUrl: 'https://example.com/photo.jpg',
   location: {
     city: 'Kampala',
@@ -14,7 +14,7 @@ export const mockHomeownerProfile: HomeownerProfile = {
   },
   contact: {
     phone: '+256 778934567',
-    email: 'john.smith@example.com',
+    email: 'cedric@maidmatch.com',
     whatsapp: '+256 778934567'
   },
   rating: 4.9,
@@ -25,8 +25,8 @@ export const mockHomeownerProfile: HomeownerProfile = {
 export const mockAvailableMaids: AvailableMaid[] = [
   {
     id: '1',
-    fullName: 'Sarah Johnson',
-    photoUrl: 'https://example.com/sarah.jpg',
+    fullName: 'Claire Agaba',
+    photoUrl: require('../../assets/wel.jpg'),
     distance: 2.5,
     rating: 4.8,
     totalJobs: 45,
@@ -68,7 +68,7 @@ export const mockMaidRequests: MaidRequest[] = [
   {
     id: '1',
     maidId: '1',
-    maidName: 'Sarah Johnson',
+    maidName: 'Claire Agaba',
     maidPhoto: 'https://example.com/sarah.jpg',
     type: 'temporary',
     status: 'accepted',
@@ -93,7 +93,7 @@ export const mockMaidRequests: MaidRequest[] = [
   {
     id: '2',
     maidId: '2',
-    maidName: 'Mary Williams',
+    maidName: 'Shiba Tushe',
     maidPhoto: 'https://example.com/mary.jpg',
     type: 'permanent',
     status: 'pending',
@@ -120,7 +120,7 @@ export const mockPayments: PaymentTransaction[] = [
     id: '1',
     requestId: '1',
     maidId: '1',
-    maidName: 'Sarah Johnson',
+    maidName: 'Claire Agaba',
     amount: 120000,
     type: 'payment',
     status: 'completed',
@@ -135,7 +135,7 @@ export const mockNotifications: HomeownerNotification[] = [
     id: '1',
     type: 'request_update',
     title: 'Maid Request Accepted',
-    message: 'Sarah Johnson has accepted your cleaning request for today',
+    message: 'Claire Agaba has accepted your cleaning request for today',
     requestId: '1',
     maidId: '1',
     date: '2024-01-13T15:05:00',

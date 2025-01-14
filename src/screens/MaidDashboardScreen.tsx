@@ -54,7 +54,7 @@ export function MaidDashboardScreen({ navigation }: Props) {
         notificationCount={mockNotifications.filter(n => !n.read).length}
         onNotificationPress={handleNotificationPress}
         earnings={{
-          current: 800000,
+          current: 80000,
           currency: 'UGX',
           period: 'month'
         }}

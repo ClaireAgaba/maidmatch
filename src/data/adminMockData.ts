@@ -114,12 +114,12 @@ export const mockReports: UserReport[] = [
     reportedBy: {
       id: 'ho1',
       type: 'homeowner',
-      name: 'Alice Brown'
+      name: 'Sheeba Tushe'
     },
     reportedUser: {
       id: 'm1',
       type: 'maid',
-      name: 'Sarah Johnson'
+      name: 'Claire Agaba'
     },
     createdAt: '2024-01-14T10:00:00',
     updatedAt: '2024-01-14T10:00:00'
@@ -132,7 +132,7 @@ export const mockNotifications: AdminNotification[] = [
     type: 'approval_needed',
     priority: 'high',
     title: 'New Maid Registration',
-    message: 'Sarah Johnson has submitted documents for verification',
+    message: 'Claire Agaba has submitted documents for verification',
     metadata: {
       userId: 'm1',
       userType: 'maid'
@@ -178,7 +178,7 @@ export const mockAuditLogs: AuditLogEntry[] = [
     details: {
       userId: 'm1',
       userType: 'maid',
-      userName: 'Sarah Johnson'
+      userName: 'Claire Agaba'
     },
     timestamp: '2024-01-13T15:00:00',
     ipAddress: '192.168.1.1'

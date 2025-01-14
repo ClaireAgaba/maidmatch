@@ -2,8 +2,8 @@ import { MaidProfile, Job, Payment, Notification } from '../types/maid';
 
 export const mockMaidProfile: MaidProfile = {
   id: '1',
-  fullName: 'Sarah Johnson',
-  photoUrl: 'https://example.com/photo.jpg',
+  fullName: 'Claire Agaba',
+  photoUrl: require('../../assets/wel.jpg'),
   age: 28,
   location: {
     city: 'Kampala',
@@ -11,7 +11,7 @@ export const mockMaidProfile: MaidProfile = {
   },
   contact: {
     phone: '+256 778934413',
-    email: 'sarah.j@example.com',
+    email: 'agaba@maidmatch.com',
     whatsapp: '+256 778934413'
   },
   skills: [
@@ -75,7 +75,7 @@ export const mockJobs: Job[] = [
     title: 'Full-time Housekeeper Needed',
     description: 'Looking for an experienced housekeeper for daily cleaning and cooking',
     employerId: 'emp2',
-    employerName: 'Mr. David Wilson',
+    employerName: 'Mr. Kambaho',
     location: {
       city: 'Kampala',
       area: 'Kololo'
