@@ -9,6 +9,7 @@ import { messageRoutes } from './routes/messageRoutes';
 import { authRoutes } from './routes/authRoutes';
 import { referenceDataRoutes } from './routes/referenceDataRoutes';
 import { connectDatabase } from './config/database';
+import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -26,12 +27,15 @@ app.use('/api/users', userRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/messages', messageRoutes);
-app.use('/reference', referenceDataRoutes);
+app.use('/api/reference-data', referenceDataRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Error handling
+app.use(errorHandler);
 
 // Start server and connect to database
 const startServer = async () => {

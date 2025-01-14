@@ -1,137 +1,51 @@
-import express, { Response } from 'express';
-import { Message } from '../models/Message';
+import express from 'express';
 import { auth } from '../middleware/auth';
+import { asyncHandler } from '../middleware/errorHandler';
+import { messageService } from '../services/messageService';
 import { AuthRequest } from '../types';
 
 const router = express.Router();
 
 // Send a message
-router.post('/', auth, async (req: AuthRequest, res: Response) => {
-  try {
-    const message = new Message({
-      sender: req.user?.userId,
-      receiver: req.body.receiver,
-      content: req.body.content
-    });
+router.post('/', auth, asyncHandler(async (req: AuthRequest, res) => {
+  const message = await messageService.sendMessage({
+    ...req.body,
+    senderId: req.user?.userId,
+  });
+  res.status(201).json(message);
+}));
 
-    await message.save();
-    
-    await message.populate([
-      { path: 'sender', select: 'fullName' },
-      { path: 'receiver', select: 'fullName' }
-    ]);
+// Get conversation with another user
+router.get('/conversation/:userId', auth, asyncHandler(async (req: AuthRequest, res) => {
+  const messages = await messageService.getConversation(
+    req.user?.userId,
+    req.params.userId
+  );
+  res.json(messages);
+}));
 
-    res.status(201).json(message);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Get conversation with a specific user
-router.get('/conversation/:userId', auth, async (req: AuthRequest, res: Response) => {
-  try {
-    const messages = await Message.find({
-      $or: [
-        { sender: req.user?.userId, receiver: req.params.userId },
-        { sender: req.params.userId, receiver: req.user?.userId }
-      ]
-    })
-      .populate('sender', 'fullName')
-      .populate('receiver', 'fullName')
-      .sort({ createdAt: 1 });
-
-    res.json(messages);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Get all conversations (grouped by user)
-router.get('/conversations', auth, async (req: AuthRequest, res: Response) => {
-  try {
-    const conversations = await Message.aggregate([
-      {
-        $match: {
-          $or: [{ sender: req.user?.userId }, { receiver: req.user?.userId }]
-        }
-      },
-      {
-        $sort: { createdAt: -1 }
-      },
-      {
-        $group: {
-          _id: {
-            $cond: {
-              if: { $eq: ['$sender', req.user?.userId] },
-              then: '$receiver',
-              else: '$sender'
-            }
-          },
-          lastMessage: { $first: '$$ROOT' }
-        }
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'user'
-        }
-      },
-      {
-        $unwind: '$user'
-      },
-      {
-        $project: {
-          user: {
-            _id: 1,
-            fullName: 1
-          },
-          lastMessage: 1
-        }
-      }
-    ]);
-
-    res.json(conversations);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Mark messages as read
-router.patch('/read/:senderId', auth, async (req: AuthRequest, res: Response) => {
-  try {
-    await Message.updateMany(
-      {
-        sender: req.params.senderId,
-        receiver: req.user?.userId,
-        read: false
-      },
-      { read: true }
-    );
-
-    res.json({ message: 'Messages marked as read' });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Get list of conversations
+router.get('/conversations', auth, asyncHandler(async (req: AuthRequest, res) => {
+  const conversations = await messageService.getConversationList(req.user?.userId);
+  res.json(conversations);
+}));
 
 // Delete a message
-router.delete('/:messageId', auth, async (req: AuthRequest, res: Response) => {
-  try {
-    const message = await Message.findOneAndDelete({
-      _id: req.params.messageId,
-      sender: req.user?.userId
-    });
+router.delete('/:id', auth, asyncHandler(async (req: AuthRequest, res) => {
+  const message = await messageService.deleteMessage(req.params.id, req.user?.userId);
+  res.json(message);
+}));
 
-    if (!message) {
-      return res.status(404).json({ error: 'Message not found' });
-    }
+// Mark message as read
+router.patch('/:id/read', auth, asyncHandler(async (req: AuthRequest, res) => {
+  const message = await messageService.markAsRead(req.params.id, req.user?.userId);
+  res.json(message);
+}));
 
-    res.json(message);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Get unread message count
+router.get('/unread/count', auth, asyncHandler(async (req: AuthRequest, res) => {
+  const count = await messageService.getUnreadCount(req.user?.userId);
+  res.json({ count });
+}));
 
-export const messageRoutes = router;
+export { router as messageRoutes };
