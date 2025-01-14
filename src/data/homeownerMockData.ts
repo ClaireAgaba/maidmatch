@@ -3,7 +3,7 @@ import { HomeownerProfile, MaidRequest, PaymentTransaction, HomeownerNotificatio
 export const mockHomeownerProfile: HomeownerProfile = {
   id: '1',
   fullName: 'Cedric Ahumuza',
-  photoUrl: 'https://example.com/photo.jpg',
+  photoUrl: require('../../assets/maid.jpg'),
   location: {
     city: 'Kampala',
     area: 'Kololo',
