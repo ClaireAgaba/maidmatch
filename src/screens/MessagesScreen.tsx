@@ -91,7 +91,7 @@ export function MessagesScreen() {
                   source={
                     message.from.avatar
                       ? { uri: message.from.avatar }
-                      : require('../assets/default-avatar.png')
+                      : require('../../assets/maid.jpg')
                   }
                 />
               </View>

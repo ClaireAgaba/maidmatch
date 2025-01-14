@@ -49,7 +49,7 @@ export function UserDetailsScreen() {
           source={
             userDetails.profilePicture
               ? { uri: userDetails.profilePicture }
-              : require('../assets/default-avatar.png')
+              : require('../../assets/maid.jpg')
           }
         />
         <Text variant="headlineMedium" style={styles.name}>

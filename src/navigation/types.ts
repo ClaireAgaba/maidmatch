@@ -1,4 +1,9 @@
 export type RootStackParamList = {
+  Welcome: undefined;
+  Login: undefined;
+  AdminLogin: undefined;
+  MaidSignup: undefined;
+  HomeOwnerSignup: undefined;
   InterfaceSelector: undefined;
   MaidDashboard: undefined;
   HomeOwnerDashboard: undefined;

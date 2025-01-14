@@ -1,118 +1,83 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Image } from 'react-native';
-import { TextInput, Button, Text, useTheme } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { TextInput, Button, Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
-import { authService } from '../services/authService';
-import { Alert } from 'react-native';
 
-export function AdminLoginScreen() {
-  const theme = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+export const AdminLoginScreen = () => {
+  const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    try {
-      setLoading(true);
-      const response = await authService.adminLogin({ email, password });
-      
-      if (response.user.role !== 'admin') {
-        throw new Error('Access denied. Admin privileges required.');
-      }
-
-      navigation.replace('AdminDashboard');
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const handleLogin = () => {
+    // For testing, navigate directly to admin dashboard
+    // @ts-ignore
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'AdminDashboard' }],
+    });
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Image 
-          source={require('../../assets/logo.jpg')} 
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <Text variant="headlineMedium" style={styles.title}>Admin Portal</Text>
-      </View>
+      <Text style={styles.title}>Admin Login</Text>
+      
+      <TextInput
+        label="Email"
+        value={email}
+        onChangeText={setEmail}
+        mode="outlined"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        style={styles.input}
+      />
+      
+      <TextInput
+        label="Password"
+        value={password}
+        onChangeText={setPassword}
+        mode="outlined"
+        secureTextEntry
+        style={styles.input}
+      />
 
-      <View style={styles.formContainer}>
-        <TextInput
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={styles.input}
-        />
+      <Button
+        mode="contained"
+        onPress={handleLogin}
+        style={styles.button}
+      >
+        Login as Admin
+      </Button>
 
-        <TextInput
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
-        />
-
-        <Button
-          mode="contained"
-          onPress={handleLogin}
-          loading={loading}
-          disabled={loading || !email || !password}
-          style={styles.loginButton}
-        >
-          Login to Admin Portal
-        </Button>
-
-        <Button
-          mode="text"
-          onPress={() => navigation.navigate('Welcome')}
-          style={styles.backButton}
-        >
-          Back to Main App
-        </Button>
-      </View>
+      <Button
+        mode="text"
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+      >
+        Back to User Login
+      </Button>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 20,
     justifyContent: 'center',
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 16,
-  },
   title: {
-    marginBottom: 8,
-  },
-  formContainer: {
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 30,
+    textAlign: 'center',
   },
   input: {
-    marginBottom: 16,
+    marginBottom: 15,
   },
-  loginButton: {
-    marginTop: 24,
-    paddingVertical: 8,
+  button: {
+    marginTop: 10,
   },
   backButton: {
-    marginTop: 16,
+    marginTop: 20,
   },
 });

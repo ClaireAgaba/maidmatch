@@ -217,7 +217,7 @@ export function RegisterScreen() {
               source={
                 formData.passportPhoto
                   ? { uri: formData.passportPhoto }
-                  : require('../assets/default-avatar.png')
+                  : require('../../assets/maid.jpg')
               }
             />
             <Button

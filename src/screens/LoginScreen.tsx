@@ -2,56 +2,44 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { TextInput, Button, Text, HelperText } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { authService } from '../services/authService';
 
 export const LoginScreen = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleLogin = async () => {
-    try {
-      console.log('Starting login process...', { email });
-      setLoading(true);
-      setError('');
-
-      const response = await authService.login({ email, password });
-      console.log('Login response:', response);
-      
-      if (!response) {
-        throw new Error('No response from login');
-      }
-
-      // Store user data in AsyncStorage
-      await authService.storeUserData(response);
-      console.log('User data stored successfully');
-
-      // Handle navigation based on user role
-      if (response.user.role === 'admin') {
-        console.log('Admin user detected, navigating to admin dashboard');
-        // @ts-ignore
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'AdminDashboard' }],
-        });
-      } else {
-        // Trigger auth state update for other users
-        await authService.updateAuthState();
-      }
-      
-    } catch (error: any) {
-      console.error('Login error:', error);
-      setError(error.response?.data?.message || error.message || 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
+  const handleLogin = () => {
+    // For testing, navigate directly to dashboard based on email domain
+    if (email.includes('admin')) {
+      // @ts-ignore
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'AdminDashboard' }],
+      });
+    } else if (email.includes('maid')) {
+      // @ts-ignore
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MaidDashboard' }],
+      });
+    } else {
+      // Default to homeowner
+      // @ts-ignore
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'HomeOwnerDashboard' }],
+      });
     }
   };
 
   const handleRegister = () => {
-    // @ts-ignore - Navigation typing issue
+    // @ts-ignore
     navigation.navigate('Welcome');
+  };
+
+  const handleAdminLogin = () => {
+    // @ts-ignore
+    navigation.navigate('AdminLogin');
   };
 
   return (
@@ -77,13 +65,9 @@ export const LoginScreen = () => {
         style={styles.input}
       />
 
-      {error ? <HelperText type="error">{error}</HelperText> : null}
-
       <Button
         mode="contained"
         onPress={handleLogin}
-        loading={loading}
-        disabled={loading}
         style={styles.button}
       >
         Login
@@ -92,6 +76,10 @@ export const LoginScreen = () => {
       <TouchableOpacity onPress={handleRegister} style={styles.registerContainer}>
         <Text style={styles.registerText}>Don't have an account? </Text>
         <Text style={[styles.registerText, styles.registerLink]}>Register here</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={handleAdminLogin} style={styles.adminLoginContainer}>
+        <Text style={[styles.registerText, styles.adminLoginText]}>Admin Login</Text>
       </TouchableOpacity>
     </View>
   );
@@ -106,14 +94,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 32,
+    marginBottom: 30,
     textAlign: 'center',
   },
   input: {
-    marginBottom: 16,
+    marginBottom: 15,
   },
   button: {
-    marginTop: 24,
+    marginTop: 10,
   },
   registerContainer: {
     flexDirection: 'row',
@@ -125,7 +113,14 @@ const styles = StyleSheet.create({
   },
   registerLink: {
     color: '#007AFF',
-    fontWeight: 'bold',
+  },
+  adminLoginContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  adminLoginText: {
+    color: '#666',
+    textDecorationLine: 'underline',
   },
 });
 
