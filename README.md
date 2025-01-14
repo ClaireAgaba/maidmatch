@@ -20,11 +20,65 @@ MaidMatch is a mobile application that connects homeowners with trusted househol
 
 ## Tech Stack
 
-- **Frontend**
-  - React Native with Expo
-  - TypeScript for type safety
-  - React Navigation for screen management
-  - React Native Paper for UI components
+### Frontend
+- React Native with Expo
+- TypeScript for type safety
+- React Navigation for screen management
+- React Native Paper for UI components
+- Organized in a modular structure:
+  - `components/`: Reusable UI components
+  - `screens/`: Main application screens
+  - `navigation/`: Navigation configuration
+  - `services/`: API integration
+  - `theme/`: Styling and theming
+  - `types/`: TypeScript type definitions
+
+### Backend
+- Node.js/Express server
+- TypeScript for type safety
+- Structured in layers:
+  - `controllers/`: Request handlers
+  - `routes/`: API endpoints
+  - `models/`: Data models
+  - `middleware/`: Auth and request processing
+  - `services/`: Business logic
+  - `config/`: Application configuration
+
+### Database
+- MongoDB with Mongoose ORM
+- Collections:
+  - Users (Maids and Homeowners)
+  - Jobs
+  - Reviews
+  - Messages
+  - Reference Data (Districts, Tribes, Languages)
+- Optimized with indexes for frequently queried fields
+
+## Project Structure
+```
+maidmatch/
+├── src/                   # Frontend source code
+│   ├── components/        # Reusable UI components
+│   ├── screens/          # Application screens
+│   ├── navigation/       # Navigation setup
+│   ├── services/         # Frontend services
+│   ├── theme/           # UI theming
+│   └── types/           # TypeScript definitions
+│
+├── backend/              # Backend source code
+│   ├── src/
+│   │   ├── controllers/ # Request handlers
+│   │   ├── routes/      # API routes
+│   │   ├── models/      # Database models
+│   │   ├── middleware/  # Express middleware
+│   │   ├── services/    # Business logic
+│   │   └── config/      # Backend configuration
+│   └── package.json     # Backend dependencies
+│
+├── assets/              # Static assets
+├── App.tsx             # Main application entry
+└── package.json        # Frontend dependencies
+```
 
 ## Getting Started
 
@@ -33,6 +87,7 @@ MaidMatch is a mobile application that connects homeowners with trusted househol
 - Node.js (v14 or newer)
 - npm or yarn
 - Expo CLI
+- MongoDB (v4.4 or newer)
 
 ### Installation
 
@@ -41,35 +96,32 @@ MaidMatch is a mobile application that connects homeowners with trusted househol
 git clone https://github.com/ClaireAgaba/maidmatch.git
 ```
 
-2. Install dependencies:
+2. Install frontend dependencies:
 ```bash
 cd maidmatch
 npm install
 ```
 
-3. Start the development server:
+3. Install backend dependencies:
 ```bash
-npm run web    # For web development
-# or
-npm start      # For mobile development
+cd backend
+npm install
 ```
 
-### Development Environment
+4. Set up environment variables:
+   - Copy `.env.example` to `.env` in both root and backend directories
+   - Update the variables with your configuration
 
-- Web browser (for web development)
-- iOS Simulator or Android Emulator (for mobile development)
-- Expo Go app on your physical device
-
-## Project Structure
-
+5. Start the backend server:
+```bash
+cd backend
+npm run dev
 ```
-maidmatch/
-├── src/
-│   ├── screens/           # Screen components
-│   ├── navigation/        # Navigation configuration
-│   └── theme/            # Theme and styling
-├── assets/               # Images and other static files
-└── App.tsx              # Root component
+
+6. Start the frontend development server:
+```bash
+cd ..
+npm start
 ```
 
 ## Contributing
