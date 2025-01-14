@@ -4,7 +4,7 @@ import { useTheme } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import DashboardHeader from '../components/admin/DashboardHeader';
-import SystemStats from '../components/admin/SystemStats';
+import SystemStatsDisplay from '../components/admin/SystemStats';
 import QuickActions from '../components/admin/QuickActions';
 import { 
   mockAdminProfile, 
@@ -75,7 +75,7 @@ export function AdminDashboardScreen({ navigation }: Props) {
         onSettingsPress={handleSettingsPress}
       />
 
-      <SystemStats
+      <SystemStatsDisplay
         stats={mockSystemStats}
         onUserStatsPress={() => navigation.navigate('AdminUserManagement')}
         onTransactionStatsPress={() => navigation.navigate('AdminTransactions')}

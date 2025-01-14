@@ -2,16 +2,16 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Surface, Text, useTheme, TouchableRipple } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { SystemStats } from '../../types/admin';
+import type { SystemStats as SystemStatsType } from '../../types/admin';
 
 interface SystemStatsProps {
-  stats: SystemStats;
+  stats: SystemStatsType;
   onUserStatsPress: () => void;
   onTransactionStatsPress: () => void;
   onReportStatsPress: () => void;
 }
 
-const SystemStats: React.FC<SystemStatsProps> = ({
+const SystemStatsDisplay: React.FC<SystemStatsProps> = ({
   stats,
   onUserStatsPress,
   onTransactionStatsPress,
@@ -155,4 +155,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SystemStats;
+export default SystemStatsDisplay;

@@ -57,8 +57,8 @@ export const mockPendingApprovals: PendingApproval[] = [
   {
     id: '1',
     userType: 'maid',
-    fullName: 'Sarah Johnson',
-    email: 'sarah.j@example.com',
+    fullName: 'Claire Agaba',
+    email: 'agaba@maidmatch.com',
     phone: '+256 778934413',
     location: {
       city: 'Kampala',
@@ -83,8 +83,8 @@ export const mockPendingApprovals: PendingApproval[] = [
   {
     id: '2',
     userType: 'homeowner',
-    fullName: 'John Smith',
-    email: 'john.s@example.com',
+    fullName: 'Cedric Ahumuza',
+    email: 'cedric@maidmatch.com',
     phone: '+256 778934567',
     location: {
       city: 'Kampala',
