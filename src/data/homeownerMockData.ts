@@ -40,7 +40,15 @@ export const mockAvailableMaids: AvailableMaid[] = [
     experience: {
       years: 3,
       specialties: ['Deep Cleaning', 'Local Cuisine']
-    }
+    },
+    location: {
+      city: 'Kampala',
+      area: 'Kisaasi',
+      coordinates: {
+        latitude: 0.3476,
+        longitude: 32.6062
+      }
+    },
   },
   {
     id: '2',

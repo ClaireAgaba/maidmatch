@@ -62,7 +62,7 @@ export const mockPendingApprovals: PendingApproval[] = [
     phone: '+256 778934413',
     location: {
       city: 'Kampala',
-      area: 'Nakawa'
+      area: 'Kisaasi'
     },
     documents: [
       {

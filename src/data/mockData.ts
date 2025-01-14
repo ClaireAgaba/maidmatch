@@ -7,7 +7,11 @@ export const mockMaidProfile: MaidProfile = {
   age: 28,
   location: {
     city: 'Kampala',
-    area: 'Nakawa'
+    area: 'Kisaasi',
+    coordinates: {
+      latitude: 0.3476,
+      longitude: 32.6062
+    }
   },
   contact: {
     phone: '+256 778934413',
