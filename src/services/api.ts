@@ -6,8 +6,15 @@ import Constants from 'expo-constants';
 // Use different base URLs for iOS simulator, Android emulator, and physical devices
 const getBaseUrl = () => {
   if (__DEV__) {
-    // Use the local IP address when running in development
-    return 'http://192.168.100.5:3000';
+    if (Platform.OS === 'web') {
+      return 'http://localhost:3000';
+    } else if (Platform.OS === 'android') {
+      // 10.0.2.2 is the special IP for Android emulator to access host machine
+      return 'http://10.0.2.2:3000';
+    } else {
+      // For iOS simulator and physical devices, use localhost
+      return 'http://localhost:3000';
+    }
   }
   // Production URL
   return 'https://your-production-api.com'; // Update this with your production API URL

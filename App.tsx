@@ -3,25 +3,53 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PaperProvider } from 'react-native-paper';
 import { theme } from './src/theme';
-import { WelcomeScreen } from './src/screens/WelcomeScreen';
-import { LoginScreen } from './src/screens/LoginScreen';
-import { MaidSignupScreen } from './src/screens/MaidSignupScreen';
-import { HomeOwnerSignupScreen } from './src/screens/HomeOwnerSignupScreen';
 import { MaidDashboardScreen } from './src/screens/MaidDashboardScreen';
 import { HomeOwnerDashboardScreen } from './src/screens/HomeOwnerDashboardScreen';
-import { AdminLoginScreen } from './src/screens/AdminLoginScreen';
 import { AdminDashboardScreen } from './src/screens/AdminDashboardScreen';
 import { RootStackParamList } from './src/navigation/types';
-import { IconButton } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { Button, Text } from 'react-native-paper';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+// Simple interface selector screen
+function InterfaceSelector({ navigation }) {
+  return (
+    <View style={styles.container}>
+      <Text variant="headlineMedium" style={styles.title}>MaidMatch</Text>
+      <View style={styles.buttonContainer}>
+        <Button
+          mode="contained"
+          style={styles.button}
+          onPress={() => navigation.navigate('MaidDashboard')}
+        >
+          Maid Interface
+        </Button>
+        <Button
+          mode="contained"
+          style={styles.button}
+          onPress={() => navigation.navigate('HomeOwnerDashboard')}
+        >
+          Home Owner Interface
+        </Button>
+        <Button
+          mode="contained"
+          style={styles.button}
+          onPress={() => navigation.navigate('AdminDashboard')}
+        >
+          Admin Interface
+        </Button>
+      </View>
+    </View>
+  );
+}
 
 export default function App() {
   return (
     <PaperProvider theme={theme}>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="Welcome"
+          initialRouteName="InterfaceSelector"
           screenOptions={{
             headerStyle: {
               backgroundColor: theme.colors.primary,
@@ -30,29 +58,9 @@ export default function App() {
           }}
         >
           <Stack.Screen
-            name="Welcome"
-            component={WelcomeScreen}
+            name="InterfaceSelector"
+            component={InterfaceSelector}
             options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{ title: 'Login' }}
-          />
-          <Stack.Screen
-            name="AdminLogin"
-            component={AdminLoginScreen}
-            options={{ title: 'Admin Login' }}
-          />
-          <Stack.Screen
-            name="MaidSignup"
-            component={MaidSignupScreen}
-            options={{ title: 'Maid Registration' }}
-          />
-          <Stack.Screen
-            name="HomeOwnerSignup"
-            component={HomeOwnerSignupScreen}
-            options={{ title: 'Home Owner Registration' }}
           />
           <Stack.Screen
             name="MaidDashboard"
@@ -74,3 +82,24 @@ export default function App() {
     </PaperProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: theme.colors.background,
+  },
+  title: {
+    marginBottom: 40,
+    color: theme.colors.primary,
+  },
+  buttonContainer: {
+    width: '100%',
+    maxWidth: 300,
+  },
+  button: {
+    marginVertical: 10,
+  },
+});

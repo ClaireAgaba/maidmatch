@@ -1,14 +1,19 @@
 export type RootStackParamList = {
-  Welcome: undefined;
-  Login: undefined;
-  AdminLogin: undefined;
-  AdminDashboard: undefined;
-  MaidSignup: undefined;
+  InterfaceSelector: undefined;
   MaidDashboard: undefined;
-  HomeOwnerSignup: undefined;
   HomeOwnerDashboard: undefined;
-  MaidProfile: undefined;
-  HomeOwnerProfile: undefined;
+  AdminDashboard: undefined;
+  AdminProfile: undefined;
+  AdminSettings: undefined;
+  AdminNotifications: undefined;
+  AdminApprovals: undefined;
+  AdminUserManagement: undefined;
+  AdminReports: undefined;
+  AdminAnalytics: undefined;
+  AdminTransactions: undefined;
+  Settings: undefined;
+  AccountSettings: undefined;
+  Messages: undefined;
   JobApplications: undefined;
   Reviews: undefined;
   AvailableMaids: {
@@ -17,6 +22,4 @@ export type RootStackParamList = {
   MaidDetails: {
     maidId: string;
   };
-  Settings: undefined;
-  AccountSettings: undefined;
 };
