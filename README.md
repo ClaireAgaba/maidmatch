@@ -1,6 +1,6 @@
 # MaidMatch
 
-A mobile application connecting homeowners with trusted household help. Built with React Native, Node.js, and MongoDB.
+A mobile application connecting homeowners with trusted household help. Built with React Native, Node.js, and Postgres.
 
 ## Features
 
@@ -14,8 +14,8 @@ A mobile application connecting homeowners with trusted household help. Built wi
 
 ```
 Frontend: React Native + Expo + TypeScript
-Backend:  Node.js + Express + TypeScript
-Database: MongoDB + Mongoose
+Backend:  Node.js + NestJS + TypeScript
+Database: Postgres + TypeORM
 ```
 
 ## Project Structure
@@ -39,7 +39,7 @@ Database: MongoDB + Mongoose
 ### Prerequisites
 - Node.js (v14+)
 - npm/yarn
-- MongoDB
+- Postgres
 
 ### Setup
 
