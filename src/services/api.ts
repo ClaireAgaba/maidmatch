@@ -1,28 +1,21 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 
-// Use different base URLs for iOS simulator, Android emulator, and physical devices
+// Use the environment variable or fallback to localhost
 const getBaseUrl = () => {
   if (__DEV__) {
-    if (Platform.OS === 'web') {
-      return 'http://localhost:3000';
-    } else if (Platform.OS === 'android') {
-      // 10.0.2.2 is the special IP for Android emulator to access host machine
-      return 'http://10.0.2.2:3000';
-    } else {
-      // For iOS simulator and physical devices, use localhost
-      return 'http://localhost:3000';
+    if (Platform.OS === 'android') {
+      return 'http://10.0.2.2:3000'; // Android emulator needs this special IP
     }
+    return 'http://localhost:3000'; // For iOS and web
   }
-  // Production URL
-  return 'https://your-production-api.com'; // Update this with your production API URL
+  return process.env.REACT_APP_API_URL || 'http://localhost:3000';
 };
 
 const api = axios.create({
   baseURL: getBaseUrl(),
-  timeout: 10000, // 10 second timeout
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -31,13 +24,19 @@ const api = axios.create({
 // Add request interceptor
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    } catch (error) {
+      console.error('Error in request interceptor:', error);
+      return config;
     }
-    return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -45,24 +44,9 @@ api.interceptors.request.use(
 // Add response interceptor
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    console.log('API Error:', error);
-    
-    if (error.message === 'Network Error') {
-      return Promise.reject(new Error('Unable to connect to server. Please check your internet connection and try again.'));
-    }
-    
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      return Promise.reject(new Error(error.response.data.error || 'An error occurred'));
-    } else if (error.request) {
-      // The request was made but no response was received
-      return Promise.reject(new Error('No response from server. Please try again.'));
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      return Promise.reject(new Error('Error setting up the request. Please try again.'));
-    }
+  async (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    return Promise.reject(error);
   }
 );
 

@@ -19,13 +19,27 @@
           "photosPermission": "The app accesses your photos to let you share them with your contacts.",
           "cameraPermission": "The app accesses your camera to let you take photos to share with your contacts."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow MaidMatch to use your location to show where you are registering from."
+        }
+      ],
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
       ]
     ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "The app needs access to your photos to let you update your profile picture.",
-        "NSCameraUsageDescription": "The app needs access to your camera to let you take profile pictures."
+        "NSCameraUsageDescription": "The app needs access to your camera to let you take profile pictures.",
+        "NSLocationWhenInUseUsageDescription": "We need your location to show where you are registering from",
+        "NSLocationAlwaysUsageDescription": "We need your location to show where you are registering from"
       }
     },
     "android": {
@@ -36,7 +50,9 @@
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
       ]
     },
     "web": {

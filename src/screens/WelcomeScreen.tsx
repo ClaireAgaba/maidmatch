@@ -1,22 +1,21 @@
 import React from 'react';
-import { StyleSheet, View, Image, Dimensions } from 'react-native';
+import { StyleSheet, View, Dimensions, Image } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
 import { LinearGradient } from 'expo-linear-gradient';
+import type { RootStackScreenProps } from '../navigation/types';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Welcome'>;
+type Props = RootStackScreenProps<'Welcome'>;
 
 const { width, height } = Dimensions.get('window');
 
-export function WelcomeScreen({ navigation }: Props) {
+const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
   const theme = useTheme();
 
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
         <Image
-          source={require('../../assets/logo.jpg')}
+          source={require('../../assets/wel.jpg')}
           style={styles.image}
           resizeMode="cover"
         />
@@ -25,20 +24,24 @@ export function WelcomeScreen({ navigation }: Props) {
           style={styles.gradient}
         />
       </View>
+
       <View style={styles.contentContainer}>
         <Text variant="displaySmall" style={[styles.title, { color: theme.colors.primary }]}>
           MaidMatch
         </Text>
+
         <Text variant="titleLarge" style={styles.subtitle}>
           Connect with trusted household help
         </Text>
+
         <Text variant="bodyLarge" style={styles.description}>
           Find reliable maids for temporary or permanent employment. Safe, secure, and convenient.
         </Text>
+
         <View style={styles.buttonContainer}>
           <Button
             mode="contained"
-            onPress={() => navigation.navigate('MaidSignup')}
+            onPress={() => navigation.navigate('MaidRegistration')}
             style={styles.button}
           >
             Register as Maid
@@ -59,15 +62,25 @@ export function WelcomeScreen({ navigation }: Props) {
           >
             I already have an account
           </Button>
+
+          <Button
+            mode="text"
+            onPress={() => navigation.navigate('AdminLogin')}
+            style={styles.adminButton}
+            labelStyle={styles.adminButtonLabel}
+          >
+            Admin Login
+          </Button>
         </View>
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   imageContainer: {
     height: height * 0.5,
@@ -109,9 +122,20 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     width: '100%',
+    alignItems: 'center',
     maxWidth: 400,
   },
   button: {
     marginVertical: 8,
+    width: '100%',
+  },
+  adminButton: {
+    marginTop: 8,
+  },
+  adminButtonLabel: {
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });
+
+export default WelcomeScreen;

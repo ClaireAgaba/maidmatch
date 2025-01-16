@@ -57,6 +57,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageSelected, existingImag
 
     try {
       const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.5,

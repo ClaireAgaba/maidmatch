@@ -1,0 +1,168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MAID
+  HOMEOWNER
+}
+
+enum JobStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum UserStatus {
+  PENDING
+  PENDING_APPROVAL
+  ACTIVE
+  REJECTED
+}
+
+model User {
+  id                String             @id @default(uuid())
+  email             String             @unique
+  password          String
+  fullName          String
+  role              UserRole
+  phoneNumber       String?
+  status            UserStatus         @default(PENDING)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  verificationStatus VerificationStatus @default(PENDING)
+  documents         Document[]
+
+  // Relationships
+  maidProfile      Maid?
+  postedJobs       Job[]              @relation("PostedJobs")
+  appliedJobs      JobApplication[]   @relation("UserApplications")
+  sentMessages     Message[]          @relation("SentMessages")
+  receivedMessages Message[]          @relation("ReceivedMessages")
+  reviewsGiven     Review[]           @relation("ReviewsGiven")
+}
+
+model Maid {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id])
+  dateOfBirth       DateTime
+  gender            String
+  nationality       String
+  tribe             String?
+  languages         Json      // Array of language objects with proficiency
+  currentAddress    Json      // Location object
+  skills            String[]  // Array of skill strings
+  profilePhoto      String?   // URL to profile photo
+  documents         Json      // Document URLs object
+  status            String    @default("pending")
+  
+  // Medical Information
+  allergies         String[]  @default([])
+  chronicConditions String[]  @default([])
+  medicalHistory    Json?     // Additional medical history
+  
+  // Contact Information
+  emergencyContact  Json      // Next of kin information
+  
+  // Education
+  educationBackground Json    // Education information
+  
+  // Work Related
+  hourlyRate        Float?
+  availability      Json?     // Availability schedule
+  
+  // Relationships
+  applications     JobApplication[]  @relation("MaidApplications")
+  reviews          Review[]         @relation("MaidReviews")
+}
+
+model Job {
+  id            String    @id @default(uuid())
+  title         String
+  description   String
+  location      Json      // Location object
+  requirements  String[]
+  duties        String[]
+  salary        Float
+  status        JobStatus @default(OPEN)
+  startDate     DateTime
+  endDate       DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relationships
+  posterId      String
+  poster        User      @relation("PostedJobs", fields: [posterId], references: [id])
+  applications  JobApplication[]  @relation("JobApplications")
+}
+
+model JobApplication {
+  id        String   @id @default(uuid())
+  jobId     String
+  maidId    String
+  userId    String
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  job       Job      @relation("JobApplications", fields: [jobId], references: [id])
+  maid      Maid     @relation("MaidApplications", fields: [maidId], references: [id])
+  user      User     @relation("UserApplications", fields: [userId], references: [id])
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  content     String
+  senderId    String
+  receiverId  String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  rating      Int
+  comment     String?
+  reviewerId  String
+  maidId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  reviewer    User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  maid        Maid     @relation("MaidReviews", fields: [maidId], references: [id])
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  url       String
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,86 +1,211 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { TextInput, Button, Text, HelperText } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { View, StyleSheet, Alert } from 'react-native';
+import { Text, TextInput, Button, useTheme, HelperText } from 'react-native-paper';
+import type { RootStackScreenProps } from '../navigation/types';
+import { authService } from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const LoginScreen = () => {
-  const navigation = useNavigation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+type Props = RootStackScreenProps<'Login'>;
 
-  const handleLogin = () => {
-    // For testing, navigate directly to dashboard based on email domain
-    if (email.includes('admin')) {
-      // @ts-ignore
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'AdminDashboard' }],
+const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
+  const theme = useTheme();
+  const { login: setAuthData } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [resendDisabled, setResendDisabled] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [errors, setErrors] = useState<{
+    phone?: string;
+    otp?: string;
+  }>({});
+
+  const validatePhone = () => {
+    if (!phone) {
+      setErrors(prev => ({ ...prev, phone: 'Phone number is required' }));
+      return false;
+    }
+    if (!/^(0|\+256)[1-9][0-9]{8}$/.test(phone)) {
+      setErrors(prev => ({
+        ...prev,
+        phone: 'Invalid phone number format. Use format: 0XXXXXXXXX or +256XXXXXXXXX'
+      }));
+      return false;
+    }
+    return true;
+  };
+
+  const startResendTimer = () => {
+    setResendDisabled(true);
+    setResendTimer(30);
+    const timer = setInterval(() => {
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setResendDisabled(false);
+          return 0;
+        }
+        return prev - 1;
       });
-    } else if (email.includes('maid')) {
-      // @ts-ignore
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'MaidDashboard' }],
-      });
-    } else {
-      // Default to homeowner
-      // @ts-ignore
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'HomeOwnerDashboard' }],
-      });
+    }, 1000);
+  };
+
+  const handleSendOTP = async () => {
+    if (!validatePhone()) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await authService.sendOTP(phone);
+      setOtpSent(true);
+      startResendTimer();
+      Alert.alert(
+        'OTP Sent',
+        'A verification code has been sent to your phone number. Please check your messages.'
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to send OTP. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleRegister = () => {
-    // @ts-ignore
-    navigation.navigate('Welcome');
+  const validateOtp = () => {
+    if (!otp) {
+      setErrors(prev => ({ ...prev, otp: 'Please enter the OTP' }));
+      return false;
+    }
+
+    if (!/^\d{6}$/.test(otp)) {
+      setErrors(prev => ({ ...prev, otp: 'OTP must be 6 digits' }));
+      return false;
+    }
+
+    return true;
   };
 
-  const handleAdminLogin = () => {
-    // @ts-ignore
-    navigation.navigate('AdminLogin');
+  const handleLogin = async () => {
+    if (!validateOtp()) return;
+
+    setLoading(true);
+    try {
+      const response = await authService.verifyOtp(phone, otp);
+      if (response.success) {
+        // Store auth data
+        await AsyncStorage.setItem('auth_token', response.token);
+        await AsyncStorage.setItem('user', JSON.stringify(response.user));
+        setAuthData(response.token, response.user);
+
+        // If there's a redirect, navigate there
+        if (route.params?.redirectTo) {
+          navigation.replace(route.params.redirectTo, route.params.formData ? { formData: route.params.formData } : undefined);
+        } else {
+          // Default navigation based on user role
+          switch (response.user.role) {
+            case 'admin':
+              navigation.replace('AdminDashboard');
+              break;
+            case 'maid':
+              navigation.replace('MaidDashboard');
+              break;
+            case 'homeowner':
+              navigation.replace('HomeOwnerDashboard');
+              break;
+            default:
+              navigation.replace('Welcome');
+          }
+        }
+      } else {
+        Alert.alert('Error', 'Login failed. Please try again.');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to MaidMatch</Text>
-      
-      <TextInput
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        mode="outlined"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        style={styles.input}
-      />
-      
-      <TextInput
-        label="Password"
-        value={password}
-        onChangeText={setPassword}
-        mode="outlined"
-        secureTextEntry
-        style={styles.input}
-      />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Text variant="headlineMedium" style={styles.title}>Login</Text>
 
-      <Button
-        mode="contained"
-        onPress={handleLogin}
-        style={styles.button}
-      >
-        Login
-      </Button>
+      <View style={styles.form}>
+        <TextInput
+          label="Phone Number"
+          value={phone}
+          onChangeText={(value) => {
+            setPhone(value);
+            setErrors(prev => ({ ...prev, phone: undefined }));
+          }}
+          mode="outlined"
+          error={!!errors.phone}
+          disabled={otpSent}
+          keyboardType="phone-pad"
+          placeholder="0XXXXXXXXX or +256XXXXXXXXX"
+          style={styles.input}
+        />
+        <HelperText type="error" visible={!!errors.phone}>
+          {errors.phone}
+        </HelperText>
 
-      <TouchableOpacity onPress={handleRegister} style={styles.registerContainer}>
-        <Text style={styles.registerText}>Don't have an account? </Text>
-        <Text style={[styles.registerText, styles.registerLink]}>Register here</Text>
-      </TouchableOpacity>
+        {otpSent && (
+          <>
+            <TextInput
+              label="Verification Code"
+              value={otp}
+              onChangeText={(value) => {
+                setOtp(value);
+                setErrors(prev => ({ ...prev, otp: undefined }));
+              }}
+              mode="outlined"
+              error={!!errors.otp}
+              keyboardType="number-pad"
+              maxLength={6}
+              style={styles.input}
+            />
+            <HelperText type="error" visible={!!errors.otp}>
+              {errors.otp}
+            </HelperText>
+          </>
+        )}
 
-      <TouchableOpacity onPress={handleAdminLogin} style={styles.adminLoginContainer}>
-        <Text style={[styles.registerText, styles.adminLoginText]}>Admin Login</Text>
-      </TouchableOpacity>
+        <Button
+          mode="contained"
+          onPress={otpSent ? handleLogin : handleSendOTP}
+          loading={loading}
+          disabled={loading}
+          style={styles.button}
+        >
+          {otpSent ? 'Login' : 'Send Verification Code'}
+        </Button>
+
+        {otpSent && (
+          <Button
+            mode="text"
+            onPress={handleSendOTP}
+            disabled={resendDisabled || loading}
+            style={styles.resendButton}
+          >
+            {resendDisabled 
+              ? `Resend code in ${resendTimer}s`
+              : 'Resend verification code'}
+          </Button>
+        )}
+
+        <View style={styles.registerContainer}>
+          <Text>Don't have an account? </Text>
+          <Button
+            mode="text"
+            onPress={() => navigation.navigate('Welcome')}
+            style={styles.registerButton}
+          >
+            Register
+          </Button>
+        </View>
+      </View>
     </View>
   );
 };
@@ -88,39 +213,32 @@ export const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    justifyContent: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 30,
     textAlign: 'center',
+    marginVertical: 24,
+  },
+  form: {
+    padding: 16,
   },
   input: {
-    marginBottom: 15,
+    marginBottom: 4,
   },
   button: {
-    marginTop: 10,
+    marginTop: 24,
+    paddingVertical: 8,
+  },
+  resendButton: {
+    marginTop: 8,
   },
   registerContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  registerText: {
-    fontSize: 16,
-  },
-  registerLink: {
-    color: '#007AFF',
-  },
-  adminLoginContainer: {
     alignItems: 'center',
-    marginTop: 20,
+    justifyContent: 'center',
+    marginTop: 24,
   },
-  adminLoginText: {
-    color: '#666',
-    textDecorationLine: 'underline',
+  registerButton: {
+    marginLeft: -8,
   },
 });
 

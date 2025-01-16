@@ -1,30 +1,34 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+export type MaidRegistrationFormData = {
+  fullName: string;
+  email: string;
+  phone: string;
+  location: string;
+};
+
 export type RootStackParamList = {
   Welcome: undefined;
-  Login: undefined;
+  Login: {
+    redirectTo?: keyof RootStackParamList;
+    formData?: any;
+  } | undefined;
   AdminLogin: undefined;
-  MaidSignup: undefined;
+  AdminDashboard: undefined;
+  AdminMaidReview: undefined;
+  MaidRegistration: { formData?: Partial<MaidRegistrationFormData> } | undefined;
   HomeOwnerSignup: undefined;
-  InterfaceSelector: undefined;
   MaidDashboard: undefined;
   HomeOwnerDashboard: undefined;
-  AdminDashboard: undefined;
-  AdminProfile: undefined;
-  AdminSettings: undefined;
-  AdminNotifications: undefined;
   AdminApprovals: undefined;
-  AdminUserManagement: undefined;
-  AdminReports: undefined;
-  AdminAnalytics: undefined;
-  AdminTransactions: undefined;
+  Messages: undefined;
   Settings: undefined;
   AccountSettings: undefined;
-  Messages: undefined;
-  JobApplications: undefined;
-  Reviews: undefined;
   AvailableMaids: {
     employmentType: 'temporary' | 'permanent';
   };
-  MaidDetails: {
-    maidId: string;
-  };
+  PendingApproval: undefined;
 };
+
+export type RootStackScreenProps<T extends keyof RootStackParamList> = 
+  NativeStackScreenProps<RootStackParamList, T>;

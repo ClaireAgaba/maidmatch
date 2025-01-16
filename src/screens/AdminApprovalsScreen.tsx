@@ -1,339 +1,283 @@
-import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { 
-  Surface, 
+  Card, 
   Text, 
+  Button, 
   useTheme, 
-  Searchbar, 
-  SegmentedButtons,
-  Card,
+  ActivityIndicator,
+  Avatar,
   Chip,
-  Button,
-  Portal,
-  Modal,
-  List,
   Divider
 } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
-import { mockPendingApprovals } from '../data/adminMockData';
-import { PendingApproval } from '../types/admin';
+import type { RootStackParamList } from '../navigation/types';
+import { API_BASE_URL, API_ENDPOINTS, getAuthHeaders } from '../config/api';
+import { useAuth } from '../contexts/AuthContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminApprovals'>;
 
-export function AdminApprovalsScreen({ navigation }: Props) {
+interface PendingMaid {
+  id: string;
+  firstName: string;
+  lastName: string;
+  profilePhoto: string;
+  dateOfBirth: string;
+  gender: string;
+  maritalStatus: string;
+  nationality: string;
+  educationLevel: string;
+  languages: string[];
+  skills: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}
+
+const AdminApprovalsScreen: React.FC<Props> = ({ navigation }) => {
   const theme = useTheme();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [userTypeFilter, setUserTypeFilter] = useState<'all' | 'maid' | 'homeowner'>('all');
-  const [selectedUser, setSelectedUser] = useState<PendingApproval | null>(null);
-  const [viewingDocuments, setViewingDocuments] = useState(false);
+  const { token } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pendingMaids, setPendingMaids] = useState<PendingMaid[]>([]);
 
-  const filteredApprovals = mockPendingApprovals.filter(approval => {
-    const matchesSearch = 
-      approval.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      approval.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = userTypeFilter === 'all' || approval.userType === userTypeFilter;
-    return matchesSearch && matchesType;
-  });
+  const fetchPendingMaids = async () => {
+    if (!token) {
+      navigation.replace('AdminLogin');
+      return;
+    }
 
-  const handleApprove = (userId: string) => {
-    // TODO: Implement approval logic
-    setSelectedUser(null);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}${API_ENDPOINTS.PENDING_APPROVALS}`,
+        {
+          headers: getAuthHeaders(token),
+        }
+      );
+
+      if (response.status === 401) {
+        navigation.replace('AdminLogin');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending maids');
+      }
+
+      const data = await response.json();
+      setPendingMaids(data);
+    } catch (error) {
+      console.error('Error fetching pending maids:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
-  const handleReject = (userId: string) => {
-    // TODO: Implement rejection logic
-    setSelectedUser(null);
+  const handleApprove = async (id: string) => {
+    if (!token) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}${API_ENDPOINTS.APPROVE_USER(id)}`,
+        {
+          method: 'POST',
+          headers: getAuthHeaders(token),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to approve maid');
+      }
+
+      // Refresh the list
+      fetchPendingMaids();
+    } catch (error) {
+      console.error('Error approving maid:', error);
+    }
   };
 
-  const renderUserCard = (approval: PendingApproval) => (
-    <Card 
-      key={approval.id} 
-      style={styles.userCard}
-      mode="outlined"
-    >
-      <Card.Content style={styles.cardContent}>
-        <View style={styles.cardHeader}>
-          <View>
-            <Text variant="titleMedium">{approval.fullName}</Text>
-            <Text variant="bodyMedium" style={styles.emailText}>{approval.email}</Text>
-          </View>
-          <Chip 
-            icon={approval.userType === 'maid' ? 'account-tie' : 'home'}
-            mode="flat"
-            style={[
-              styles.typeChip,
-              { backgroundColor: theme.colors.secondaryContainer }
-            ]}
-          >
-            {approval.userType === 'maid' ? 'Maid' : 'Homeowner'}
-          </Chip>
-        </View>
+  const handleReject = async (id: string) => {
+    if (!token) return;
 
-        <View style={styles.detailsContainer}>
-          <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="phone" size={20} color={theme.colors.onSurface} />
-            <Text variant="bodyMedium" style={styles.detailText}>{approval.phone}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="map-marker" size={20} color={theme.colors.onSurface} />
-            <Text variant="bodyMedium" style={styles.detailText}>
-              {approval.location.area}, {approval.location.city}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="clock" size={20} color={theme.colors.onSurface} />
-            <Text variant="bodyMedium" style={styles.detailText}>
-              Submitted {new Date(approval.submittedAt).toLocaleDateString()}
-            </Text>
-          </View>
-        </View>
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}${API_ENDPOINTS.REJECT_USER(id)}`,
+        {
+          method: 'POST',
+          headers: getAuthHeaders(token),
+        }
+      );
 
-        <View style={styles.cardActions}>
-          <Button 
-            mode="contained"
-            onPress={() => setSelectedUser(approval)}
-            style={styles.reviewButton}
-          >
-            Review Application
-          </Button>
-        </View>
-      </Card.Content>
-    </Card>
-  );
+      if (!response.ok) {
+        throw new Error('Failed to reject maid');
+      }
 
-  const renderDetailsModal = () => (
-    <Portal>
-      <Modal
-        visible={!!selectedUser}
-        onDismiss={() => setSelectedUser(null)}
-        contentContainerStyle={[
-          styles.modalContent,
-          { backgroundColor: theme.colors.background }
-        ]}
-      >
-        <ScrollView>
-          <View style={styles.modalHeader}>
-            <Text variant="headlineSmall" style={styles.modalTitle}>
-              Application Review
-            </Text>
-            <Chip 
-              icon={selectedUser?.userType === 'maid' ? 'account-tie' : 'home'}
-              mode="flat"
-            >
-              {selectedUser?.userType === 'maid' ? 'Maid' : 'Homeowner'}
-            </Chip>
-          </View>
+      // Refresh the list
+      fetchPendingMaids();
+    } catch (error) {
+      console.error('Error rejecting maid:', error);
+    }
+  };
 
-          <Card style={styles.sectionCard}>
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                Personal Information
-              </Text>
-              <List.Item 
-                title="Full Name"
-                description={selectedUser?.fullName}
-                left={props => <List.Icon {...props} icon="account" />}
-              />
-              <List.Item 
-                title="Email"
-                description={selectedUser?.email}
-                left={props => <List.Icon {...props} icon="email" />}
-              />
-              <List.Item 
-                title="Phone"
-                description={selectedUser?.phone}
-                left={props => <List.Icon {...props} icon="phone" />}
-              />
-              <List.Item 
-                title="Location"
-                description={`${selectedUser?.location.area}, ${selectedUser?.location.city}`}
-                left={props => <List.Icon {...props} icon="map-marker" />}
-              />
-            </Card.Content>
-          </Card>
+  useEffect(() => {
+    fetchPendingMaids();
+  }, [token]);
 
-          <Card style={styles.sectionCard}>
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                Documents
-              </Text>
-              {selectedUser?.documents.map(doc => (
-                <List.Item
-                  key={doc.id}
-                  title={doc.type.split('_').map(word => 
-                    word.charAt(0).toUpperCase() + word.slice(1)
-                  ).join(' ')}
-                  description={doc.status}
-                  left={props => <List.Icon {...props} icon="file-document" />}
-                  right={() => (
-                    <Button 
-                      mode="contained-tonal"
-                      onPress={() => {/* TODO: View document */}}
-                    >
-                      View
-                    </Button>
-                  )}
-                />
-              ))}
-            </Card.Content>
-          </Card>
-
-          <View style={styles.modalActions}>
-            <Button
-              mode="contained"
-              onPress={() => handleApprove(selectedUser!.id)}
-              icon="check"
-              style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}
-            >
-              Approve
-            </Button>
-            <Button
-              mode="contained"
-              onPress={() => handleReject(selectedUser!.id)}
-              icon="close"
-              style={[styles.actionButton, { backgroundColor: theme.colors.error }]}
-            >
-              Reject
-            </Button>
-          </View>
-        </ScrollView>
-      </Modal>
-    </Portal>
-  );
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Surface style={styles.header} elevation={1}>
-        <Text variant="headlineSmall" style={styles.title}>User Approvals</Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
-          {mockPendingApprovals.length} pending applications
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              fetchPendingMaids();
+            }}
+          />
+        }
+      >
+        <Text variant="titleLarge" style={styles.sectionTitle}>
+          Pending Maid Applications ({pendingMaids.length})
         </Text>
-      </Surface>
 
-      <View style={styles.filters}>
-        <Searchbar
-          placeholder="Search by name or email"
-          onChangeText={setSearchQuery}
-          value={searchQuery}
-          style={styles.searchBar}
-        />
-        
-        <SegmentedButtons
-          value={userTypeFilter}
-          onValueChange={value => setUserTypeFilter(value as typeof userTypeFilter)}
-          buttons={[
-            { value: 'all', label: 'All' },
-            { value: 'maid', label: 'Maids' },
-            { value: 'homeowner', label: 'Homeowners' }
-          ]}
-          style={styles.segmentedButtons}
-        />
-      </View>
+        {pendingMaids.map((maid) => (
+          <Card key={maid.id} style={styles.card} mode="outlined">
+            <Card.Title
+              title={`${maid.firstName} ${maid.lastName}`}
+              subtitle={`Applied on ${new Date(maid.createdAt).toLocaleDateString()}`}
+              left={(props) => (
+                <Avatar.Image
+                  {...props}
+                  source={{ uri: maid.profilePhoto }}
+                  size={40}
+                />
+              )}
+            />
+            <Card.Content>
+              <View style={styles.detailRow}>
+                <Text variant="labelLarge">Age:</Text>
+                <Text>{new Date().getFullYear() - new Date(maid.dateOfBirth).getFullYear()}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text variant="labelLarge">Gender:</Text>
+                <Text>{maid.gender}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text variant="labelLarge">Education:</Text>
+                <Text>{maid.educationLevel}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text variant="labelLarge">Languages:</Text>
+                <View style={styles.chipContainer}>
+                  {maid.languages.map((lang) => (
+                    <Chip key={lang} style={styles.chip}>{lang}</Chip>
+                  ))}
+                </View>
+              </View>
+              <View style={styles.detailRow}>
+                <Text variant="labelLarge">Skills:</Text>
+                <View style={styles.chipContainer}>
+                  {maid.skills.map((skill) => (
+                    <Chip key={skill} style={styles.chip}>{skill}</Chip>
+                  ))}
+                </View>
+              </View>
+            </Card.Content>
+            <Divider style={styles.divider} />
+            <Card.Actions>
+              <Button 
+                mode="contained" 
+                onPress={() => handleApprove(maid.id)}
+                style={[styles.actionButton, styles.approveButton]}
+              >
+                Approve
+              </Button>
+              <Button 
+                mode="contained" 
+                onPress={() => handleReject(maid.id)}
+                style={[styles.actionButton, styles.rejectButton]}
+              >
+                Reject
+              </Button>
+            </Card.Actions>
+          </Card>
+        ))}
 
-      <ScrollView style={styles.content}>
-        {filteredApprovals.map(renderUserCard)}
+        {pendingMaids.length === 0 && (
+          <Card style={styles.emptyCard}>
+            <Card.Content>
+              <Text style={styles.emptyText}>No pending applications</Text>
+            </Card.Content>
+          </Card>
+        )}
       </ScrollView>
-
-      {renderDetailsModal()}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f5f5f5',
   },
-  header: {
-    padding: 16,
-  },
-  title: {
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    opacity: 0.7,
-    marginTop: 4,
-  },
-  filters: {
-    padding: 16,
-  },
-  searchBar: {
-    marginBottom: 16,
-  },
-  segmentedButtons: {
-    marginBottom: 8,
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  userCard: {
-    marginBottom: 16,
-  },
-  cardContent: {
-    gap: 16,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  emailText: {
-    opacity: 0.7,
-  },
-  typeChip: {
-    minWidth: 100,
+  centered: {
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  detailsContainer: {
-    gap: 8,
+  content: {
+    padding: 16,
+  },
+  sectionTitle: {
+    marginBottom: 16,
+  },
+  card: {
+    marginBottom: 16,
   },
   detailRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  detailText: {
-    opacity: 0.7,
-  },
-  cardActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  reviewButton: {
-    minWidth: 150,
-  },
-  modalContent: {
-    margin: 20,
-    borderRadius: 12,
-    padding: 20,
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 8,
   },
-  modalTitle: {
-    fontWeight: 'bold',
-  },
-  sectionCard: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    marginBottom: 12,
-    fontWeight: 'bold',
-  },
-  modalActions: {
+  chipContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 16,
-    marginTop: 24,
-    marginBottom: 16,
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  chip: {
+    marginRight: 4,
+    marginBottom: 4,
+  },
+  divider: {
+    marginVertical: 8,
   },
   actionButton: {
     flex: 1,
+    marginHorizontal: 4,
+  },
+  approveButton: {
+    backgroundColor: '#4CAF50',
+  },
+  rejectButton: {
+    backgroundColor: '#f44336',
+  },
+  emptyCard: {
+    padding: 16,
+    alignItems: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
+    opacity: 0.6,
   },
 });
+
+export default AdminApprovalsScreen;

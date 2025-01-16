@@ -1,25 +1,23 @@
 import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
+import type { RootStackScreenProps } from '../navigation/types';
 import DashboardHeader from '../components/homeowner/DashboardHeader';
 import QuickActions from '../components/homeowner/QuickActions';
 import SearchOptions from '../components/homeowner/SearchOptions';
 import { mockHomeownerProfile, mockNotifications } from '../data/homeownerMockData';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'HomeOwnerDashboard'>;
+type Props = RootStackScreenProps<'HomeOwnerDashboard'>;
 
-export function HomeOwnerDashboardScreen({ navigation }: Props) {
+const HomeOwnerDashboardScreen: React.FC<Props> = ({ navigation }) => {
   const theme = useTheme();
 
   const handleNotificationPress = () => {
-    // TODO: Navigate to notifications
     navigation.navigate('Messages');
   };
 
   const handleProfilePress = () => {
-    navigation.navigate('HomeOwnerProfile');
+    navigation.navigate('Settings');
   };
 
   const quickActions = [
@@ -28,7 +26,7 @@ export function HomeOwnerDashboardScreen({ navigation }: Props) {
       icon: 'file-document-outline',
       label: 'My Requests',
       description: 'View and manage your maid requests',
-      onPress: () => navigation.navigate('JobApplications'),
+      onPress: () => navigation.navigate('AvailableMaids', { employmentType: 'temporary' }),
     },
     {
       id: '2',
@@ -42,7 +40,7 @@ export function HomeOwnerDashboardScreen({ navigation }: Props) {
       icon: 'star-outline',
       label: 'Reviews',
       description: 'Rate and review your maids',
-      onPress: () => navigation.navigate('Reviews'),
+      onPress: () => navigation.navigate('Settings'),
     },
     {
       id: '4',
@@ -84,10 +82,12 @@ export function HomeOwnerDashboardScreen({ navigation }: Props) {
       <QuickActions actions={quickActions} />
     </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
 });
+
+export default HomeOwnerDashboardScreen;

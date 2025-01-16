@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, List, Card, TextInput, Button, Avatar, useTheme } from 'react-native-paper';
-import { messageService } from '../services/messageService';
+import type { RootStackScreenProps } from '../navigation/types';
+
+type Props = RootStackScreenProps<'Messages'>;
 
 interface Message {
   id: string;
@@ -14,17 +16,20 @@ interface Message {
   to: {
     id: string;
     name: string;
+    avatar?: string;
+    role: 'maid' | 'homeowner' | 'admin';
   };
   content: string;
-  createdAt: string;
-  status: 'unread' | 'read';
+  timestamp: string;
+  read: boolean;
 }
 
-export function MessagesScreen() {
+const MessagesScreen: React.FC<Props> = ({ navigation }) => {
   const theme = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadMessages();
@@ -37,6 +42,24 @@ export function MessagesScreen() {
     } catch (error) {
       console.error('Error loading messages:', error);
     }
+  };
+
+  const filteredMessages = messages.filter(message =>
+    message.from.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    message.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleMessagePress = (message: Message) => {
+    // TODO: Navigate to chat detail screen
+    console.log('Message pressed:', message.id);
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
   };
 
   const handleSendMessage = async () => {
@@ -59,56 +82,70 @@ export function MessagesScreen() {
     }
   };
 
-  const markAsRead = async (messageId: string) => {
-    try {
-      await messageService.markAsRead(messageId);
-      loadMessages();
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-    }
-  };
+  const renderMessage = (message: Message) => (
+    <Card
+      key={message.id}
+      style={[
+        styles.messageCard,
+        !message.read && { backgroundColor: theme.colors.primaryContainer }
+      ]}
+      onPress={() => handleMessagePress(message)}
+    >
+      <Card.Content style={styles.messageContent}>
+        <View style={styles.messageHeader}>
+          <View style={styles.userInfo}>
+            {message.from.avatar ? (
+              <Avatar.Image
+                size={40}
+                source={{ uri: message.from.avatar }}
+              />
+            ) : (
+              <Avatar.Text
+                size={40}
+                label={getInitials(message.from.name)}
+              />
+            )}
+            <View style={styles.textContainer}>
+              <Text variant="titleMedium">{message.from.name}</Text>
+              <Text variant="bodySmall" style={styles.timestamp}>
+                {new Date(message.timestamp).toLocaleString()}
+              </Text>
+            </View>
+          </View>
+          {!message.read && (
+            <View style={[styles.unreadBadge, { backgroundColor: theme.colors.primary }]} />
+          )}
+        </View>
+        <Text
+          variant="bodyMedium"
+          numberOfLines={2}
+          style={[styles.messageText, message.read && styles.readMessage]}
+        >
+          {message.content}
+        </Text>
+      </Card.Content>
+    </Card>
+  );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text variant="headlineMedium">Messages</Text>
+        <Text variant="headlineMedium" style={styles.title}>Messages</Text>
+        <TextInput
+          placeholder="Search messages..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          mode="outlined"
+          style={styles.searchInput}
+        />
       </View>
 
-      <ScrollView style={styles.messageList}>
-        {messages.map((message) => (
-          <Card
-            key={message.id}
-            style={[
-              styles.messageCard,
-              message.status === 'unread' && styles.unreadMessage,
-            ]}
-            onPress={() => markAsRead(message.id)}
-          >
-            <Card.Content style={styles.messageContent}>
-              <View style={styles.avatarContainer}>
-                <Avatar.Image
-                  size={48}
-                  source={
-                    message.from.avatar
-                      ? { uri: message.from.avatar }
-                      : require('../../assets/maid.jpg')
-                  }
-                />
-              </View>
-              <View style={styles.messageDetails}>
-                <View style={styles.messageHeader}>
-                  <Text variant="titleMedium">{message.from.name}</Text>
-                  <Text variant="bodySmall" style={styles.timestamp}>
-                    {new Date(message.createdAt).toLocaleDateString()}
-                  </Text>
-                </View>
-                <Text variant="bodyMedium" style={styles.messageText}>
-                  {message.content}
-                </Text>
-              </View>
-            </Card.Content>
-          </Card>
-        ))}
+      <ScrollView style={styles.messagesList}>
+        {filteredMessages.length > 0 ? (
+          filteredMessages.map(renderMessage)
+        ) : (
+          <Text style={styles.emptyText}>No messages found</Text>
+        )}
       </ScrollView>
 
       <Card style={styles.composerCard}>
@@ -133,7 +170,7 @@ export function MessagesScreen() {
       </Card>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -143,36 +180,52 @@ const styles = StyleSheet.create({
   header: {
     padding: 16,
   },
-  messageList: {
-    flex: 1,
+  title: {
+    marginBottom: 16,
+  },
+  searchInput: {
+    marginBottom: 8,
+  },
+  messagesList: {
+    padding: 16,
   },
   messageCard: {
-    margin: 8,
-    marginHorizontal: 16,
-  },
-  unreadMessage: {
-    backgroundColor: '#f0f9ff',
+    marginBottom: 8,
   },
   messageContent: {
-    flexDirection: 'row',
-  },
-  avatarContainer: {
-    marginRight: 16,
-  },
-  messageDetails: {
-    flex: 1,
+    padding: 8,
   },
   messageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  textContainer: {
+    marginLeft: 12,
   },
   timestamp: {
-    color: '#666',
+    opacity: 0.7,
   },
   messageText: {
-    color: '#333',
+    marginLeft: 52,
+  },
+  readMessage: {
+    opacity: 0.7,
+  },
+  unreadBadge: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 32,
+    opacity: 0.6,
   },
   composerCard: {
     margin: 16,
@@ -184,3 +237,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
+
+export default MessagesScreen;
